@@ -3,10 +3,15 @@ import type { ActivityCell } from '../types/fire';
 export interface FireCalendarRow extends ActivityCell {
   period: string;
   baselineMean: number | null;
+  baselineMedian?: number | null;
+  baselineYears?: number | null;
+  coverageState?: string;
   baselineStdDev: number | null;
   anomalyZScore: number | null;
   historicalPercentile: number | null;
   activityCategory:
+    | 'Unavailable'
+    | (string & {})
     | 'Unusual high'
     | 'Above normal'
     | 'Normal'
