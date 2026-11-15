@@ -4,6 +4,7 @@ from phase1_storage import DATA_DIR
 
 def seed_demo():
     import numpy as np
+    import pandas as pd
     from phase1_database import load_standardized
     from phase1_modis import standardize_modis
     from phase1_viirs import standardize_viirs
@@ -39,4 +40,3 @@ def seed_demo():
 
 if __name__ == "__main__":
     print("Synthetic Phase 2 fixture:", seed_demo())
-

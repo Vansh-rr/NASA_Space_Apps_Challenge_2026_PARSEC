@@ -66,4 +66,3 @@ NASA's MODIS Collection 6 publication reports a 1.2% daytime global commission e
 ## Git handoff
 
 Do not commit `.venv/`, compiled executables, downloaded NASA data, `algorithm_test_output/`, or credentials. Stage only the four source/dependency files and the real-data contract, and optional acquisition files if required. Preserve your team's existing Phase 2 source and tests unchanged. The new runner can be used independently until both workstreams are ready to integrate.
-

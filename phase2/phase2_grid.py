@@ -244,4 +244,3 @@ def export_grid(
     grid_cells.to_parquet(out_path / "grid_cells.parquet", index=False)
     assignments.to_parquet(out_path / "grid_observations.parquet", index=False)
 
-

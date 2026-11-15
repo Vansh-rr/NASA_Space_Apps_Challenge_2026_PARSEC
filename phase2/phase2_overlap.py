@@ -240,4 +240,3 @@ if __name__ == '__main__':
     if not _df.empty:
         save_overlap(_df, cfg=_cfg, region_key=_region)
         store_overlap_table(_df, db_path=_db)
-

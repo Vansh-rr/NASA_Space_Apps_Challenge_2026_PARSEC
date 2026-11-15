@@ -1,0 +1,7 @@
+{
+  "stages": {
+    "algorithm_offline": 0
+  },
+  "all_requested_stages_passed": true,
+  "algorithm_scope": "Offline synthetic, NASA mask prediction, or reviewed reference according to requested stage; see individual reports."
+}

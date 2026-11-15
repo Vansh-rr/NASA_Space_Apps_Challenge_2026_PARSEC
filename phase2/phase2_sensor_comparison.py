@@ -255,4 +255,3 @@ def aggregate_groups(pairs: pd.DataFrame) -> pd.DataFrame:
     agg['log_frp_viirs_sum'] = _safe_log(agg['viirs_frp_sum_mw'])
     return agg
  
-

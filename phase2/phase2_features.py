@@ -202,4 +202,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     run_features(demo=args.demo, region=args.region)
-

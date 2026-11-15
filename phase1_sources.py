@@ -14,4 +14,3 @@ def get_map_key() -> str:
             'FIRMS_MAP_KEY is missing. Please recheck your key in the secret'
         )
     return key
-

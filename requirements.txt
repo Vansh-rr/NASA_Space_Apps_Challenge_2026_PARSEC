@@ -15,4 +15,3 @@ matplotlib>=3.8,<4
 
 # Shared algorithm dependencies (same constraints as original independent package)
 -r phase2/algorithm/requirements.txt
-

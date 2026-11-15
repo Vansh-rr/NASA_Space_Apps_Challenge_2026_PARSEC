@@ -1,0 +1,16 @@
+test_analytic_one_cell (__main__.Core.test_analytic_one_cell) ... ok
+test_bruteforce_smoother (__main__.Core.test_bruteforce_smoother) ... ok
+test_calibration_and_mixture (__main__.Core.test_calibration_and_mixture) ... ok
+test_geometry (__main__.Core.test_geometry) ... ok
+test_invalid_and_real_guard (__main__.Core.test_invalid_and_real_guard) ... ok
+test_nasa_mask_fixture_handoff (__main__.Core.test_nasa_mask_fixture_handoff) ... ok
+test_particle_matches_exact (__main__.Core.test_particle_matches_exact) ... ok
+test_unavailable_and_holdout_no_leakage (__main__.Core.test_unavailable_and_holdout_no_leakage) ... ok
+test_metrics_one_class (__main__.Independent.test_metrics_one_class) ... ok
+test_missing_csv_refused (__main__.Independent.test_missing_csv_refused) ... ok
+test_same_holdout_comparators (__main__.Independent.test_same_holdout_comparators) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 2.938s
+
+OK

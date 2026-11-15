@@ -41,4 +41,3 @@ Earthaccess downloads original mask/geolocation files; extracted rows classify 5
 References for retrieval support and library:
 - NASA VIIRS 375 m Collection 2 user guide: https://ladsweb.modaps.eosdis.nasa.gov/archive/Document%20Archive/Science%20Data%20Product%20Documentation/VIIRS_C2_AF-375m_User_Guide_1.2.pdf
 - earthaccess quick start: https://earthaccess.readthedocs.io/en/stable/user/quick-start/
-

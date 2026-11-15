@@ -121,4 +121,3 @@ class CommonObservation(BaseModel):
 assert set(OBSERVATION_COLUMNS) == (
     set(CommonObservation.model_fields) | set(CommonObservation.model_computed_fields)
 ), 'CommonObservation and export columns differ'
-

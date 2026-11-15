@@ -1,0 +1,23 @@
+{
+  "source_kind": "SYNTHETIC",
+  "rows": 32,
+  "groups": 4,
+  "positive": 18,
+  "negative": 14,
+  "model": {
+    "rmse_mw": 5.146885395725065,
+    "mae_mw": 3.3705373680325,
+    "bias_mw": 2.11152351839875,
+    "brier": 0.03938863430069607,
+    "logloss": 0.17701631625639974
+  },
+  "baseline": {
+    "rmse_mw": 8.882919002219934,
+    "mae_mw": 8.59375,
+    "bias_mw": 2.96875,
+    "brier": 0.37750000000000006,
+    "logloss": 1.002934129444148
+  },
+  "interval_coverage": 1.0,
+  "warning": "Conditional on reference quality, support and representativeness. Not automatic scientific certification."
+}

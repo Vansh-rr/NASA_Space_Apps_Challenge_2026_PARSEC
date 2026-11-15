@@ -1,0 +1,17 @@
+{
+ "source_kind":"SYNTHETIC",
+ "calibration_kind":"ILLUSTRATIVE",
+ "solver":"particle_fixed_lag",
+ "cells":20,
+ "time_bins":8,
+ "draws":1,
+ "particles_max_used":6000,
+ "minimum_ess_fraction":0.000687330810464,
+ "minimum_unique_ancestors":35,
+ "warning":true,
+ "train_modis":133,
+ "train_viirs":140,
+ "holdout_modis":0,
+ "holdout_viirs":7,
+ "scientific_status":"SYNTHETIC ONLY"
+}

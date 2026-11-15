@@ -57,4 +57,3 @@ def activity(period='day', bbox=None, start=None, end=None, sensor=None,
     '''
     with connect_db(db_path) as con:
         return con.execute(sql, params).df()
-

@@ -153,4 +153,3 @@ def download_firms(source, bbox, start, end, map_key=None):
     save_metadata(path, source, bbox, start, end, len(combined))
     combined.attrs['source_file'] = str(path)
     return combined
-

@@ -135,4 +135,3 @@ def standardize_modis(df, product=None, version=None, source_file=None,
         platform_aliases=MODIS_PLATFORMS, version=version,
         source_file=source_file, include_source_record=include_source_record,
     )
-

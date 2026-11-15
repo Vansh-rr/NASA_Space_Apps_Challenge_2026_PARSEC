@@ -142,4 +142,3 @@ if __name__ == '__main__':
           f'{_cfg.matching.max_time_diff_minutes:g} min')
     if not _pairs.empty:
         print(_pairs.groupby('modis_satellite').size().rename('pairs').to_string())
-

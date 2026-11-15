@@ -153,4 +153,3 @@ NASA raw data, generated reports, DBs, compiled executables, venvs or credential
   was made by this reorganization. The algorithm's NASA comparison remains exploratory.
 
 See `REORGANIZATION_TEST_REPORT.md` for the actual results.
-

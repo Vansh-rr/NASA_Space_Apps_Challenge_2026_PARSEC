@@ -98,4 +98,3 @@ def write_status(run, stages):
     print(json.dumps(report, indent=2))
     print('Workflow reports:', run)
     return 0 if report['all_requested_stages_passed'] else 1
-

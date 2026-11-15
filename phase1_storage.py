@@ -52,4 +52,3 @@ def make_sample(csv_path, n=200):
     destination = FOLDERS['sample'] / ('sample_' + Path(csv_path).name)
     sample.to_csv(destination, index=False)
     return destination
-

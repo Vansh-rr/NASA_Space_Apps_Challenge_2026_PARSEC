@@ -1,0 +1,99 @@
+...........F.....                                                        [100%]
+=================================== FAILURES ===================================
+______________ test_export_grid_writes_and_reads_back_row_counts _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_export_grid_writes_and_re0')
+
+    def test_export_grid_writes_and_reads_back_row_counts(tmp_path: Path) -> None:
+        import geopandas as gpd
+        from phase2.phase2_grid import build_grid_cells, export_grid
+    
+        config = GridConfig()
+        df = _make_df([
+            {
+                "observation_id": "obs_1",
+                "latitude": 54.0,
+                "longitude": -126.5,
+                "sensor_family": "MODIS",
+                "satellite": "Terra",
+            },
+            {
+                "observation_id": "obs_2",
+                "latitude": 54.0,
+                "longitude": -126.5,
+                "sensor_family": "VIIRS",
+                "satellite": "S-NPP",
+            },
+            {
+                "observation_id": "obs_3",
+                "latitude": 55.5,
+                "longitude": -122.0,
+                "sensor_family": "MODIS",
+                "satellite": "Aqua",
+            },
+        ])
+        assignments = assign_cells(df, config, 5)
+        cells = build_grid_cells(assignments, config)
+>       export_grid(cells, assignments, tmp_path)
+
+tests_phase2/test_phase2_grid.py:281: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+phase2/phase2_grid.py:244: in export_grid
+    grid_cells.to_parquet(out_path / "grid_cells.parquet", index=False)
+/opt/pyvenv/lib/python3.13/site-packages/geopandas/geodataframe.py:1464: in to_parquet
+    _to_parquet(
+/opt/pyvenv/lib/python3.13/site-packages/geopandas/io/arrow.py:435: in _to_parquet
+    parquet = import_optional_dependency(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'pyarrow.parquet', extra = 'pyarrow is required for Parquet support.'
+
+    def import_optional_dependency(name: str, extra: str = ""):
+        """
+        Import an optional dependency.
+    
+        Adapted from pandas.compat._optional::import_optional_dependency
+    
+        Raises a formatted ImportError if the module is not present.
+    
+        Parameters
+        ----------
+        name : str
+            The module name.
+        extra : str
+            Additional text to include in the ImportError message.
+    
+        Returns
+        -------
+        module
+        """
+        msg = f"""Missing optional dependency '{name}'. {extra}  "
+            "Use pip or conda to install {name}."""
+    
+        if not isinstance(name, str):
+            raise ValueError(f"Invalid module name: '{name}'; must be a string")
+    
+        try:
+            module = importlib.import_module(name)
+    
+        except ImportError:
+>           raise ImportError(msg) from None
+E           ImportError: Missing optional dependency 'pyarrow.parquet'. pyarrow is required for Parquet support.  "
+E                   "Use pip or conda to install pyarrow.parquet.
+
+/opt/pyvenv/lib/python3.13/site-packages/geopandas/_compat.py:61: ImportError
+=============================== warnings summary ===============================
+tests_phase2/test_phase2_grid.py::test_round_trip_assign_cells
+tests_phase2/test_phase2_grid.py::test_round_trip_assign_cells
+tests_phase2/test_phase2_grid.py::test_assign_cells_differs_between_regions
+tests_phase2/test_phase2_grid.py::test_assign_cells_differs_between_regions
+tests_phase2/test_phase2_grid.py::test_assign_cells_differs_between_regions
+tests_phase2/test_phase2_grid.py::test_assign_cells_differs_between_regions
+  /opt/pyvenv/lib/python3.13/site-packages/pyproj/transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests_phase2/test_phase2_grid.py::test_export_grid_writes_and_reads_back_row_counts - ImportError: Missing optional dependency 'pyarrow.parquet'. pyarrow is required for Parquet support.  "
+        "Use pip or conda to install pyarrow.parquet.
+1 failed, 16 passed, 6 warnings in 0.49s

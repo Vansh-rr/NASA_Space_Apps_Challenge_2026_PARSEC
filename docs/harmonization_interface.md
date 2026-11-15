@@ -68,4 +68,3 @@ and `log_frp_viirs_sum` (if present) from prediction inputs. Other target-side
 features such as counts, geometry and time differences may be unavailable in a
 MODIS-only historical period. A future model must define and test its own
 source-only feature contract. The identity baseline is unchanged.
-

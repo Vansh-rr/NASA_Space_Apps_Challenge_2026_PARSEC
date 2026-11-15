@@ -48,4 +48,3 @@ The original individual modules are available as `python -m phase2.phase2_<modul
 The team pipeline includes grid, raw comparison, features and dataset exports as well
 as its original seven steps. `--from` and `--only` remain available for partial runs.
 See `REPOSITORY_ORGANIZATION.md` for migration and what has and has not been validated.
-

@@ -36,4 +36,3 @@ are deliberately not deleted. `git status` must be reviewed before committing.
 
 If simply extracting a new working copy, the same archive works on its own:
 `cd PARSEC_Organized`, install requirements, then `python phase2_test.py`.
-

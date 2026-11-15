@@ -66,4 +66,3 @@ It returns `model_predictions`: `predicted_value`, optional `predicted_lower` / 
 
 ## 8. Units
 Time UTC · coordinates degrees (WGS84) · distance km · area km² · FRP MW · temperature K · time differences minutes.
-

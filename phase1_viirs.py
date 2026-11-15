@@ -15,4 +15,3 @@ def standardize_viirs(df, source_dataset='VIIRS_SNPP_SP', version=None,
         version=version, source_file=source_file,
         include_source_record=include_source_record,
     )
-
