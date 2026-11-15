@@ -1,0 +1,120 @@
+import { getJson } from './api';
+
+export interface ModelPreviewMetadata {
+  model_run_id: string;
+  source_kind: string;
+  calibration_kind: string;
+  physical_frp_validated: boolean;
+  warning: boolean;
+  solver: string;
+  area_crs: string;
+  bbox: [number, number, number, number];
+  start_utc: string;
+  last_bin_utc: string;
+  bin_seconds: number;
+  cells: number;
+  time_bins: number;
+  rows: number;
+  observed_rows: number;
+  training_observations: { modis: number; viirs: number };
+  disclaimer: string;
+  source_granules: string[];
+}
+
+export interface ModelPreviewFieldItem {
+  time: string;
+  cell_id: string;
+  latitude: number;
+  longitude: number;
+  p_fire: number;
+  usable_observation_count: number;
+  coverage_status: 'observed' | 'model_only';
+}
+
+export interface ModelPreviewValidation {
+  scope: string;
+  selected_fold: number;
+  comparison: {
+    n: number;
+    positives: number;
+    negatives: number;
+    heldout_granules: string[];
+  };
+}
+
+export interface HourlyProbability {
+  time: string;
+  meanPFire: number;
+}
+
+export interface CellSummaryRow {
+  cell_id: string;
+  latitude: number;
+  longitude: number;
+  meanPFire: number;
+  maxPFire: number;
+  observedBins: number;
+}
+
+export interface ModelPreviewData {
+  metadata: ModelPreviewMetadata;
+  items: ModelPreviewFieldItem[];
+  validation: ModelPreviewValidation;
+}
+
+export async function fetchModelPreview(signal?: AbortSignal): Promise<ModelPreviewData> {
+  const [metadata, field, validation] = await Promise.all([
+    getJson<ModelPreviewMetadata>('/model-preview/metadata', undefined, signal),
+    getJson<{ items: ModelPreviewFieldItem[]; total: number }>('/model-preview/field', { limit: 10000 }, signal),
+    getJson<ModelPreviewValidation>('/model-preview/validation', undefined, signal),
+  ]);
+  return { metadata, items: field.items, validation };
+}
+
+export function hourlyMeanProbability(items: ModelPreviewFieldItem[]): HourlyProbability[] {
+  const byTime = new Map<string, { sum: number; count: number }>();
+  for (const item of items) {
+    const entry = byTime.get(item.time) ?? { sum: 0, count: 0 };
+    entry.sum += item.p_fire;
+    entry.count += 1;
+    byTime.set(item.time, entry);
+  }
+  return Array.from(byTime.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([time, { sum, count }]) => ({ time, meanPFire: sum / count }));
+}
+
+export function cellSummary(items: ModelPreviewFieldItem[]): CellSummaryRow[] {
+  const byCell = new Map<
+    string,
+    { latitude: number; longitude: number; sum: number; count: number; max: number; observedBins: number }
+  >();
+  for (const item of items) {
+    const entry = byCell.get(item.cell_id);
+    if (!entry) {
+      byCell.set(item.cell_id, {
+        latitude: item.latitude,
+        longitude: item.longitude,
+        sum: item.p_fire,
+        count: 1,
+        max: item.p_fire,
+        observedBins: item.coverage_status === 'observed' ? 1 : 0,
+      });
+    } else {
+      entry.sum += item.p_fire;
+      entry.count += 1;
+      if (item.p_fire > entry.max) entry.max = item.p_fire;
+      if (item.coverage_status === 'observed') entry.observedBins += 1;
+    }
+  }
+  return Array.from(byCell.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([cell_id, v]) => ({
+      cell_id,
+      latitude: v.latitude,
+      longitude: v.longitude,
+      meanPFire: v.sum / v.count,
+      maxPFire: v.max,
+      observedBins: v.observedBins,
+    }));
+}

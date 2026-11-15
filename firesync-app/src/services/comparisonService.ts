@@ -7,8 +7,8 @@ const METHODOLOGY =
   'Counts and mean FRP are computed in UTC from satellite detections inside the study region bounding box. ' +
   'Active fire days are days with at least one detection. Map points show a deterministic sample of up to 300 ' +
   'detections per record. The harmonized record currently shows one point per matched MODIS detection with FRP ' +
-  'from the identity baseline (harmonized FRP equals MODIS FRP); the Bayesian harmonization model is not ' +
-  'connected yet. Data covers British Columbia for the months loaded into the database.';
+  'from the identity baseline (harmonized FRP equals MODIS FRP); the Bayesian harmonization model is shown ' +
+  'separately as an exploratory preview on the Model Preview page. Data covers British Columbia for the months loaded into the database.';
 
 export interface ApiDailyRow {
   date: string;

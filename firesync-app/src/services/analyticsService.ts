@@ -10,7 +10,7 @@ const METHODOLOGY =
   'Total FRP is the sum of reported FRP over all detections in the month; it is not fire energy, because ' +
   'one fire is seen on several overpasses. Anomaly, clusters and month-to-month change are not connected to the API yet. ' +
   'The harmonized record is the identity baseline (harmonized FRP equals ' +
-  'MODIS FRP); the Bayesian model is not connected yet. Data covers British Columbia for the months loaded into the database, in UTC.';
+  'MODIS FRP); the Bayesian model is shown separately as an exploratory preview on the Model Preview page. Data covers British Columbia for the months loaded into the database, in UTC.';
 
 /** Which record drives the KPI cards. See METHODOLOGY. */
 export function kpiSensor(sensors: SensorId[]): SensorId | null {

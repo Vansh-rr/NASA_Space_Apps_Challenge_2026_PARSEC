@@ -7,6 +7,7 @@ const ROUTES = [
   { to: '/', label: 'Explore' },
   { to: '/analytics', label: 'Analytics' },
   { to: '/compare', label: 'Compare' },
+  { to: '/model-preview', label: 'Model Preview' },
 ];
 
 /** Destinations named in the designs that are not part of this prototype yet. */
