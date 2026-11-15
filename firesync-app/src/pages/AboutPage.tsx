@@ -72,9 +72,7 @@ const HOW_IT_WORKS = [
 },
 ];
 
-const TEAM = [
-    /*name: '', role: 'Lead researcher', affiliation: 'Your Institution' }*/,
-];
+const TEAM: Array<{ name: string; role?: string; affiliation?: string }> = [];
 
 const LINKS = [
     { label: 'NASA FIRMS', description: 'Fire Information for Resource Management System', url: 'https://firms.modaps.eosdis.nasa.gov' },
@@ -104,7 +102,6 @@ export function AboutPage() {
         <div className={styles.sourceGrid}>
         {DATA_SOURCES.map((src) => (
             <div key={src.name} className={`${shared.card} ${styles.sourceCard}`}>
-            <span className={styles.sourceIcon} aria-hidden="true">{src.icon}</span>
             <h3 className={styles.sourceName}>{src.name}</h3>
             <p className={styles.sourceFullName}>{src.fullName}</p>
             <p className={styles.sourceSatellites}>{src.satellites}</p>
