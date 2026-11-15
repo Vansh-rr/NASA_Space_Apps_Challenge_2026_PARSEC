@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAnalytics } from './analyticsService';
+import { buildAnalytics, historyMetrics, historySensor, type ApiHistory } from './analyticsService';
 import { fillDailySums, type ApiComparisonResponse } from './comparisonService';
 
 const FAKE_API: ApiComparisonResponse = {
@@ -83,5 +83,32 @@ describe('buildAnalytics', () => {
     expect(res.metrics.totalFrp.value).toBe(250.5);
     expect(res.observations).toHaveLength(1);
     expect(res.observations[0].sensor).toBe('harmonized');
+  });
+});
+
+describe('history metrics (anomaly + clusters)', () => {
+  const HISTORY: ApiHistory = {
+    years: [
+      { year: 2018, n_detections: 900, n_fire_events_started: 40, anomaly: { n_detections: { z_score: 0.4, anomaly_class: 'normal' } } },
+      { year: 2023, n_detections: 2400, n_fire_events_started: 75, anomaly: { n_detections: { z_score: 2.345, anomaly_class: 'much_above_normal' } } },
+    ],
+  };
+
+  it('picks the selected year', () => {
+    expect(historyMetrics('2023-07', HISTORY)).toEqual({ zScore: 2.345, clusters: 75 });
+    expect(historyMetrics('2010-07', HISTORY)).toEqual({ zScore: null, clusters: null });
+    expect(historyMetrics('2023-07', null)).toEqual({ zScore: null, clusters: null });
+  });
+
+  it('fills the anomaly and cluster cards', () => {
+    const out = buildAnalytics({ regionId: 'british_columbia', month: '2023-07', sensors: ['modis', 'viirs'] }, FAKE_API, HISTORY);
+    expect(out.metrics.anomaly.value).toBe(2.35);
+    expect(out.metrics.clusters.value).toBe(75);
+  });
+
+  it('uses VIIRS only when VIIRS drives the cards', () => {
+    expect(historySensor('viirs')).toBe('VIIRS');
+    expect(historySensor('modis')).toBe('MODIS');
+    expect(historySensor('harmonized')).toBe('MODIS');
   });
 });
