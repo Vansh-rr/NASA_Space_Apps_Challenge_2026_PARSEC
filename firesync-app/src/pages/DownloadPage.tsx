@@ -23,12 +23,14 @@ import {
 
 import { ErrorState, LoadingState } from '../components/shared/States';
 import { DATA_YEARS } from '../data/dataYears';
+import { REGIONS } from '../data/regions';
+import { fetchDownloadData } from '../services/downloadService';
 import { useServiceQuery } from '../hooks/useServiceQuery';
 import {
-  ACTIVITY_UNIT,
   EXPLORE_REGION,
+  EXPLORE_SENSORS,
+  type ExploreSensor,
   IS_DEMO_DATA,
-  fetchActivityMatrix,
   fetchExploreObservations
 } from '../services/fireData';
 import type { FireObservation } from '../types/fire';
@@ -41,7 +43,6 @@ import {
 } from '../utils/downloadCsv';
 
 import {
-  buildFireCalendarRows,
   summarizeFireAnalytics
 } from '../utils/fireDownloadAnalytics';
 
@@ -51,7 +52,8 @@ import styles from './DownloadPage.module.css';
 const MIN_DATE = `${Math.min(...DATA_YEARS)}-01-01`;
 const MAX_DATE = `${Math.max(...DATA_YEARS)}-12-31`;
 /** Observations are fetched one month at a time, so very long ranges are capped. */
-const MAX_EXPORT_MONTHS = 36;
+const MAX_EXPORT_MONTHS = 12;
+const MAX_POINTS_PER_MONTH = 50000;
 
 export function DownloadPage() {
   const [startDate, setStartDate] =
@@ -59,6 +61,9 @@ export function DownloadPage() {
 
   const [endDate, setEndDate] =
     useState('2023-12-31');
+
+  const [region, setRegion] = useState(EXPLORE_REGION);
+  const [sensor, setSensor] = useState<ExploreSensor>('MODIS');
 
   const [showChart, setShowChart] =
     useState(true);
@@ -77,82 +82,34 @@ export function DownloadPage() {
     startDate <= endDate
   );
 
-  // Monthly detection counts from the PARSEC API (same source as the Explore heatmap)
+  // Load real monthly counts and official historical anomalies.
   const activity = useServiceQuery(
-    'download-activity',
-    fetchActivityMatrix
+    `download-${region}-${sensor}`,
+    signal => fetchDownloadData(region, sensor, signal)
   );
 
-  const cells = useMemo(
-    () => activity.data ?? [],
-    [activity.data]
-  );
+  const cells = useMemo(() => activity.data?.cells ?? [], [activity.data]);
+  const allCalendarRows = useMemo(() => activity.data?.calendar ?? [], [activity.data]);
 
-  // Filter monthly fire activity
-  const filteredCells = useMemo(
-    () =>
-      isValidDateRange
-        ? cells.filter(cell => {
-            const monthStart =
-              `${cell.year}-${String(cell.month).padStart(2, '0')}-01`;
+  const inRange = (year: number, month: number) => {
+    const first = `${year}-${String(month).padStart(2, '0')}-01`;
+    const last = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+    return first <= endDate && last >= startDate;
+  };
 
-            const monthEnd = new Date(
-              Date.UTC(cell.year, cell.month, 0)
-            ).toISOString().slice(0, 10);
-
-            return (
-              monthStart <= endDate &&
-              monthEnd >= startDate
-            );
-          })
-        : [],
-    [cells, startDate, endDate, isValidDateRange]
-  );
-
-  // Months in the range that actually contain detections
-  const exportMonths = useMemo(
-    () =>
-      filteredCells
-        .filter(cell => cell.value > 0)
-        .sort((a, b) => a.year - b.year || a.month - b.month),
-    [filteredCells]
-  );
-
-  const detectionsInMonths = useMemo(
-    () => exportMonths.reduce((sum, cell) => sum + cell.value, 0),
-    [exportMonths]
-  );
-
+  const filteredCells = isValidDateRange ? cells.filter(cell => inRange(cell.year, cell.month)) : [];
+  const calendarRows = isValidDateRange ? allCalendarRows.filter(row => inRange(row.year, row.month)) : [];
+  const exportMonths = filteredCells.filter(cell => cell.value > 0).sort((a, b) => a.year - b.year || a.month - b.month);
+  const detectionsInMonths = exportMonths.reduce((sum, cell) => sum + cell.value, 0);
   const tooManyMonths = exportMonths.length > MAX_EXPORT_MONTHS;
-
-  // Calculate historical statistics using all years
-  const allCalendarRows = useMemo(
-    () => buildFireCalendarRows(cells),
-    [cells]
-  );
-
-  // Then filter the calculated calendar
-  const calendarRows = useMemo(() => {
-    const keys = new Set(
-      filteredCells.map(
-        cell =>
-          `${cell.year}-${String(cell.month).padStart(2, '0')}`
-      )
-    );
-
-    return allCalendarRows.filter(
-      row => keys.has(row.period)
-    );
-  }, [allCalendarRows, filteredCells]);
+  const hasCappedMonth = exportMonths.some(cell => cell.value > MAX_POINTS_PER_MONTH);
+  const canDownload = isValidDateRange && activity.status === 'ready' && calendarRows.length > 0;
 
   // Analytics summary
   const analytics = useMemo(
     () => summarizeFireAnalytics(calendarRows),
     [calendarRows]
   );
-
-  const canDownload =
-    isValidDateRange && calendarRows.length > 0;
 
   const suffix = `${startDate}_to_${endDate}`;
 
@@ -165,10 +122,7 @@ export function DownloadPage() {
       const collected: FireObservation[] = [];
 
       for (const cell of exportMonths) {
-        const rows = await fetchExploreObservations({
-          year: cell.year,
-          month: cell.month
-        });
+        const rows = await fetchExploreObservations(region, { year: cell.year, month: cell.month }, sensor);
 
         collected.push(...rows);
       }
@@ -205,7 +159,7 @@ export function DownloadPage() {
       <main className={shared.page}>
         <div className={styles.container}>
           <ErrorState
-            message={activity.error ?? ''}
+            message={`${activity.error ?? 'Cannot fetch fire data.'} Make sure FastAPI is running at http://localhost:8000 and its database is available.`}
             onRetry={activity.retry}
           />
         </div>
@@ -254,6 +208,18 @@ export function DownloadPage() {
           </p>
 
           <div className={styles.dateRange}>
+            <div className={styles.dateField}>
+              <label htmlFor="download-region">Region</label>
+              <select id="download-region" className={styles.dateInput} value={region} onChange={e => setRegion(e.target.value)}>
+                {REGIONS.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+              </select>
+            </div>
+            <div className={styles.dateField}>
+              <label htmlFor="download-sensor">Sensor</label>
+              <select id="download-sensor" className={styles.dateInput} value={sensor} onChange={e => setSensor(e.target.value as ExploreSensor)}>
+                {EXPLORE_SENSORS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+              </select>
+            </div>
             <div className={styles.dateField}>
               <label htmlFor="start-date">
                 Start Date
@@ -321,7 +287,7 @@ export function DownloadPage() {
             <h2>Fire Observations</h2>
 
             <p>
-              Download MODIS fire detections for British Columbia including
+              Download sampled {sensor} fire detections for the selected region including
               coordinates, timestamps, satellite sensor and FRP.
             </p>
 
@@ -346,6 +312,7 @@ export function DownloadPage() {
                 !isValidDateRange ||
                 !exportMonths.length ||
                 tooManyMonths ||
+                hasCappedMonth ||
                 exporting
               }
               onClick={handleObservationsDownload}
@@ -364,6 +331,10 @@ export function DownloadPage() {
               </p>
             )}
 
+            {hasCappedMonth && (
+              <p className={styles.error}>One or more months exceed the API limit of {MAX_POINTS_PER_MONTH.toLocaleString()} observations. Full observation export needs a streaming backend endpoint.</p>
+            )}
+
             {exportError && (
               <p className={styles.error} role="alert">
                 {exportError}
@@ -380,7 +351,7 @@ export function DownloadPage() {
             <h2>Fire Activity History</h2>
 
             <p>
-              Export monthly MODIS detection counts used by
+              Export monthly {sensor} detection counts used by
               the Explore fire activity heatmap.
             </p>
 
@@ -424,9 +395,7 @@ export function DownloadPage() {
             <h2>Fire Analytics (Statistics &amp; Anomalies)</h2>
 
             <p>
-              Export monthly fire counts, historical averages,
-              standard deviations, anomaly z-scores,
-              percentiles and classifications.
+              Export monthly counts, official historical median, anomaly z-scores, percentiles and classifications.
             </p>
 
             <div className={styles.info}>
@@ -471,9 +440,7 @@ export function DownloadPage() {
             <h2>Burning Activity Calendar</h2>
 
             <p>
-              Export the year-by-month burning activity
-              calendar with detection counts, historical
-              percentile and activity level.
+              Export year-by-month fire activity with detection counts, historical percentiles, activity categories and coverage status.
             </p>
 
             <div className={styles.info}>
@@ -530,6 +497,9 @@ export function DownloadPage() {
           </div>
 
           {/* STATISTICS */}
+          {!activity.data?.historyAvailable && (
+            <p className={styles.error}>Historical anomaly data is unavailable from /history. Count exports remain available; anomaly columns will be blank.</p>
+          )}
           <div className={styles.metrics}>
             <div>
               <span>Monthly Average</span>
@@ -665,22 +635,16 @@ export function DownloadPage() {
           <strong>Data Notice</strong>
 
           <p>
-            Data are NASA FIRMS MODIS fire detections for
-            British Columbia ({ACTIVITY_UNIT}), served by the
-            PARSEC API ({EXPLORE_REGION}). Years without
-            downloaded data appear as zero-detection months.
-            Observation exports download the detections of every
-            month that overlaps your dates and then trim them to
-            the exact start and end date (UTC).
+            Data is retrieved from the PARSEC FastAPI service for the selected
+            region and sensor. Missing months are not assumed to contain zero fires.
+            The Download page requires the Python API and its DuckDB database to be running.
+            The observation export is limited to {MAX_EXPORT_MONTHS} months and
+            {MAX_POINTS_PER_MONTH.toLocaleString()} points per month to avoid partial CSVs.
           </p>
-
           <p>
-            The calendar and monthly analytics include an
-            entire month whenever it overlaps your selected
-            dates. Anomalies compare each month against the
-            other available years for the same calendar month
-            ({MIN_DATE.slice(0, 4)}–{MAX_DATE.slice(0, 4)}). A z-score with absolute value at
-            least 2 is flagged as unusual.
+            Monthly calendar and analytics exports include the entire month if it
+            overlaps the selected date range. Anomaly metrics use the official
+            /history endpoint; missing history stays unavailable instead of being estimated.
           </p>
         </div>
 
