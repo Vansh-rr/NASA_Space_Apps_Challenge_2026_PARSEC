@@ -126,6 +126,7 @@ export function downloadBurningCalendar(
     'Fire Detections',
     'Historical Percentile (%)',
     'Activity Category',
+    'Coverage State',
     'Demo Data'
   ];
 
@@ -136,6 +137,7 @@ export function downloadBurningCalendar(
     row.value,
     row.historicalPercentile,
     row.activityCategory,
+    row.coverageState ?? 'Unknown',
     isDemo
   ]);
 
@@ -153,12 +155,13 @@ export function downloadFireAnalytics(
     'Month',
     'Period',
     'Fire Detections',
-    'Baseline Mean Detections',
-    'Baseline Std Dev',
+    'Baseline Median Detections',
+    'Baseline Years',
     'Anomaly Z-Score',
     'Historical Percentile (%)',
     'Anomaly Classification',
     'Anomaly (abs Z >= 2)',
+    'Coverage State',
     'Demo Data'
   ];
 
@@ -167,13 +170,14 @@ export function downloadFireAnalytics(
     row.month,
     row.period,
     row.value,
-    row.baselineMean,
-    row.baselineStdDev,
+    row.baselineMedian ?? null,
+    row.baselineYears ?? null,
     row.anomalyZScore,
     row.historicalPercentile,
     row.activityCategory,
     row.anomalyZScore !== null &&
       Math.abs(row.anomalyZScore) >= 2,
+    row.coverageState ?? 'Unknown',
     isDemo
   ]);
 
