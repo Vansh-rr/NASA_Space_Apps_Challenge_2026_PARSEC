@@ -1,0 +1,15 @@
+{
+  "name": "parsec-development",
+  "private": true,
+  "scripts": {
+    "backend": "python -m uvicorn phase3.api:app --reload --port 8000",
+    "frontend": "npm --prefix firesync-app run dev",
+    "dev": "concurrently -k \"npm:backend\" \"npm:frontend\"",
+    "dev:demo": "concurrently -k \"cross-env PARSEC_DEMO=1 npm run backend\" \"npm:frontend\"",
+    "setup:demo": "python phase1_run.py"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^7.0.3"
+  }
+}
