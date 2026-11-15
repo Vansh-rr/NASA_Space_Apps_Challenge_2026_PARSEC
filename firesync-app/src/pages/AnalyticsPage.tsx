@@ -9,7 +9,8 @@ import { DemoBadge, ErrorState, LoadingState } from '../components/shared/States
 import { getRegion } from '../data/regions';
 import { useAnalytics } from '../hooks/useAnalytics';
 import type { AnalyticsFilters as Filters } from '../types/analytics';
-import { monthLabel } from '../utils/dates';
+import { MONTH_SHORT, monthLabel } from '../utils/dates';
+import { formatCount } from '../utils/formatters';
 import shared from '../styles/shared.module.css';
 import styles from './AnalyticsPage.module.css';
 
@@ -57,6 +58,16 @@ export function AnalyticsPage() {
               </p>
             )}
           </div>
+
+          {data.historical && (
+            <p className={styles.history}>
+              <strong>{monthLabel(data.filters.month)} vs history:</strong> {formatCount(data.historical.value)}{' '}
+              {data.historical.sensor} detections, against a median of {formatCount(data.historical.median)} for{' '}
+              {MONTH_SHORT[Number(data.filters.month.slice(5, 7)) - 1]} in the other {data.historical.baselineYears} downloaded years
+              {' · '}
+              <strong>{data.historical.anomalyClass.replaceAll('_', ' ')}</strong>
+            </p>
+          )}
 
           <MetricsGrid metrics={data.metrics} />
 

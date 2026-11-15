@@ -6,6 +6,17 @@ import type { SelectedLocation } from '../types/fire';
 import { demoDelay } from './demoDelay';
 
 export const DEMO_PLACES: SelectedLocation[] = [
+  // British Columbia (the region with real data)
+  { label: 'Vancouver, BC', latitude: 49.28, longitude: -123.12 },
+  { label: 'Victoria, BC', latitude: 48.43, longitude: -123.37 },
+  { label: 'Kamloops, BC', latitude: 50.67, longitude: -120.33 },
+  { label: 'Kelowna, BC', latitude: 49.89, longitude: -119.5 },
+  { label: 'Penticton, BC', latitude: 49.49, longitude: -119.59 },
+  { label: 'Lytton, BC', latitude: 50.23, longitude: -121.58 },
+  { label: 'Williams Lake, BC', latitude: 52.14, longitude: -122.14 },
+  { label: 'Prince George, BC', latitude: 53.92, longitude: -122.75 },
+  { label: 'Fort St. John, BC', latitude: 56.25, longitude: -120.85 },
+  { label: 'Fort Nelson, BC', latitude: 58.81, longitude: -122.7 },
   { label: 'Redding, CA', latitude: 40.59, longitude: -122.39 },
   { label: 'Chico, CA', latitude: 39.73, longitude: -121.84 },
   { label: 'Sacramento, CA', latitude: 38.58, longitude: -121.49 },

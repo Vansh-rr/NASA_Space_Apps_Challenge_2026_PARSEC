@@ -11,6 +11,16 @@ regions:
   bc_dev:
     name: Small BC development box (fast tests)
     bbox: [-123.0, 52.0, -120.0, 54.0]
+  # extra regions for the website; they only show data after a FIRMS download for their box
+  california:
+    name: California, USA
+    bbox: [-124.6, 32.4, -114.0, 42.1]
+  oregon:
+    name: Oregon, USA
+    bbox: [-124.7, 41.9, -116.4, 46.3]
+  nevada:
+    name: Nevada, USA
+    bbox: [-120.1, 35.0, -114.0, 42.0]
 
 default_region: british_columbia
 

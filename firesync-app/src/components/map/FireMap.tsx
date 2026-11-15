@@ -28,9 +28,32 @@ interface FireMapProps {
   focus?: SelectedLocation | null;
   sync?: MapSyncGroup;
   className?: string;
+  /** While true, dragging on the map draws a rectangle instead of panning. */
+  drawing?: boolean;
+  /** The drawn area of interest [west, south, east, north], outlined on the map. */
+  area?: Bounds | null;
+  onAreaDrawn?: (area: Bounds) => void;
 }
 
 const SOURCE_ID = 'fires';
+const AREA_ID = 'area';
+
+function areaGeoJson(area: Bounds | null | undefined): FeatureCollection {
+  if (!area) return { type: 'FeatureCollection', features: [] };
+  const [w, s, e, n] = area;
+  return {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'Polygon', coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] },
+    }],
+  };
+}
+
+function toBounds(a: maplibregl.LngLat, b: maplibregl.LngLat): Bounds {
+  return [Math.min(a.lng, b.lng), Math.min(a.lat, b.lat), Math.max(a.lng, b.lng), Math.max(a.lat, b.lat)];
+}
 const colorExpression = ['interpolate', ['linear'], ['get', 'logFrp'], ...FRP_COLOR_STOPS.flat()];
 
 function kmToDegLat(km: number): number {
@@ -96,6 +119,9 @@ export function FireMap({
   focus,
   sync,
   className,
+  drawing = false,
+  area = null,
+  onAreaDrawn,
 }: FireMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -107,8 +133,15 @@ export function FireMap({
   const [notice, setNotice] = useState<string | null>(null);
   const [tileError, setTileError] = useState(false);
 
+  const areaRef = useRef(area);
+  const drawingRef = useRef(drawing);
+  const onAreaDrawnRef = useRef(onAreaDrawn);
+
   observationsRef.current = observations;
   boundsRef.current = bounds;
+  areaRef.current = area;
+  drawingRef.current = drawing;
+  onAreaDrawnRef.current = onAreaDrawn;
 
   // Create the map once; data, bounds and focus are applied by the effects below.
   useEffect(() => {
@@ -154,9 +187,33 @@ export function FireMap({
           'line-opacity': 0.5,
         },
       });
+      map.addSource(AREA_ID, { type: 'geojson', data: areaGeoJson(areaRef.current) });
+      map.addLayer({ id: 'area-fill', type: 'fill', source: AREA_ID, paint: { 'fill-color': '#38bdf8', 'fill-opacity': 0.12 } });
+      map.addLayer({ id: 'area-line', type: 'line', source: AREA_ID, paint: { 'line-color': '#38bdf8', 'line-width': 2 } });
+    });
+
+    // drawing an area of interest: press, drag, release
+    let start: maplibregl.LngLat | null = null;
+    map.on('mousedown', (event) => {
+      if (!drawingRef.current) return;
+      event.preventDefault();
+      start = event.lngLat;
+    });
+    map.on('mousemove', (event) => {
+      if (!drawingRef.current || !start) return;
+      (map.getSource(AREA_ID) as GeoJSONSource | undefined)?.setData(areaGeoJson(toBounds(start, event.lngLat)));
+    });
+    map.on('mouseup', (event) => {
+      if (!drawingRef.current || !start) return;
+      const drawn = toBounds(start, event.lngLat);
+      start = null;
+      // ignore clicks without a real drag
+      if (drawn[2] - drawn[0] < 0.01 || drawn[3] - drawn[1] < 0.01) return;
+      onAreaDrawnRef.current?.(drawn);
     });
 
     map.on('click', 'fires-fill', (event) => {
+      if (drawingRef.current) return;
       const feature = event.features?.[0];
       if (!feature || feature.geometry.type !== 'Polygon') return;
       const p = feature.properties as Record<string, unknown>;
@@ -177,8 +234,8 @@ export function FireMap({
       )
       .addTo(map);
     });
-    map.on('mouseenter', 'fires-fill', () => (map.getCanvas().style.cursor = 'pointer'));
-    map.on('mouseleave', 'fires-fill', () => (map.getCanvas().style.cursor = ''));
+    map.on('mouseenter', 'fires-fill', () => (map.getCanvas().style.cursor = drawingRef.current ? 'crosshair' : 'pointer'));
+    map.on('mouseleave', 'fires-fill', () => (map.getCanvas().style.cursor = drawingRef.current ? 'crosshair' : ''));
 
     // Distinguish basemap failures from "no observations": points still draw without tiles.
     map.on('error', (event) => {
@@ -216,6 +273,21 @@ export function FireMap({
     if (!map || !loadedRef.current) return;
     (map.getSource(SOURCE_ID) as GeoJSONSource | undefined)?.setData(toGeoJson(observations));
   }, [observations]);
+
+  // Show the drawn area, and stop panning while drawing.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !loadedRef.current) return;
+    (map.getSource(AREA_ID) as GeoJSONSource | undefined)?.setData(areaGeoJson(area));
+  }, [area]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (drawing) map.dragPan.disable();
+    else map.dragPan.enable();
+    map.getCanvas().style.cursor = drawing ? 'crosshair' : '';
+  }, [drawing]);
 
   // Refit when the region changes.
   const boundsKey = bounds.join(',');

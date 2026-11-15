@@ -212,3 +212,13 @@
 }
 
 
+
+.history {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  color: var(--text-body);
+  font-size: 15px;
+}

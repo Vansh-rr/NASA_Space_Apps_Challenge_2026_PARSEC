@@ -1,4 +1,4 @@
-import type { AnalyticsFilters, AnalyticsResponse } from '../types/analytics';
+import type { AnalyticsFilters, AnalyticsResponse, HistoricalComparison } from '../types/analytics';
 import type { SensorId } from '../types/fire';
 import { datesOfMonth } from '../utils/dates';
 import { movingAverage } from '../utils/metrics';
@@ -29,7 +29,10 @@ export interface ApiHistory {
     year: number;
     n_detections: number | null;
     n_fire_events_started: number | null;
-    anomaly: Record<string, { z_score: number | null; anomaly_class: string } | undefined>;
+    anomaly: Record<
+      string,
+      { z_score: number | null; anomaly_class: string; baseline_median?: number | null; n_baseline_years?: number } | undefined
+    >;
   }>;
 }
 
@@ -46,6 +49,21 @@ export function historyMetrics(month: string, history: ApiHistory | null): { zSc
     zScore: row?.anomaly?.n_detections?.z_score ?? null,
     // 0 events in a month with detections means events were not computed for that year (2003, 2010)
     clusters: row && row.n_fire_events_started && row.n_fire_events_started > 0 ? row.n_fire_events_started : null,
+  };
+}
+
+/** "24,195 detections vs a median of 7,571 in the other 6 years" for the selected month; null when unknown. */
+export function historicalComparison(month: string, history: ApiHistory | null, sensor: 'MODIS' | 'VIIRS'): HistoricalComparison | null {
+  const year = Number(month.slice(0, 4));
+  const row = history?.years.find((y) => y.year === year);
+  const a = row?.anomaly?.n_detections;
+  if (!row || row.n_detections === null || !a || a.baseline_median === null || a.baseline_median === undefined) return null;
+  return {
+    sensor,
+    value: row.n_detections,
+    median: a.baseline_median,
+    baselineYears: a.n_baseline_years ?? 0,
+    anomalyClass: a.anomaly_class,
   };
 }
 
@@ -88,6 +106,7 @@ export function buildAnalytics(filters: AnalyticsFilters, api: ApiComparisonResp
       anomaly: { value: hist.zScore === null ? null : Math.round(hist.zScore * 100) / 100, unit: 'z-score', change: null, changeKind: 'absolute' },
       clusters: { value: hist.clusters, unit: 'count', change: null, changeKind: 'percent' },
     },
+    historical: historicalComparison(filters.month, history, historySensor(sensor)),
     daily,
     observations,
     isDemo: false,

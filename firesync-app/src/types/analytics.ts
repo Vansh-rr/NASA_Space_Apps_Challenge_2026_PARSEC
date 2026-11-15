@@ -36,6 +36,15 @@ export interface Metric {
   changeKind: 'percent' | 'absolute';
 }
 
+/** This month against the same calendar month in the other downloaded years (from /history). */
+export interface HistoricalComparison {
+  sensor: 'MODIS' | 'VIIRS';
+  value: number;
+  median: number;
+  baselineYears: number;
+  anomalyClass: string;
+}
+
 export interface AnalyticsResponse {
   filters: AnalyticsFilters;
   metrics: {
@@ -44,6 +53,8 @@ export interface AnalyticsResponse {
     detections: Metric;
     clusters: Metric;
   };
+  /** Null when there is no history for this month. */
+  historical: HistoricalComparison | null;
   daily: DailyAnalytics[];
   observations: FireObservation[];
   isDemo: boolean;

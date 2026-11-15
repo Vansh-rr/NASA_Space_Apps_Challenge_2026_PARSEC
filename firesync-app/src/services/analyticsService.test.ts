@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAnalytics, historyMetrics, historySensor, type ApiHistory } from './analyticsService';
+import { buildAnalytics, historicalComparison, historyMetrics, historySensor, type ApiHistory } from './analyticsService';
 import { fillDailySums, type ApiComparisonResponse } from './comparisonService';
 
 const FAKE_API: ApiComparisonResponse = {
@@ -110,5 +110,28 @@ describe('history metrics (anomaly + clusters)', () => {
     expect(historySensor('viirs')).toBe('VIIRS');
     expect(historySensor('modis')).toBe('MODIS');
     expect(historySensor('harmonized')).toBe('MODIS');
+  });
+});
+describe('historical comparison (this month vs the median)', () => {
+  const HISTORY: ApiHistory = {
+    years: [
+      {
+        year: 2024, n_detections: 27975, n_fire_events_started: 1338,
+        anomaly: { n_detections: { z_score: 1.52, anomaly_class: 'much_above_normal', baseline_median: 7571, n_baseline_years: 6 } },
+      },
+      { year: 2010, n_detections: 2488, n_fire_events_started: 0, anomaly: {} },
+    ],
+  };
+
+  it('gives value, median and class for the selected year', () => {
+    expect(historicalComparison('2024-07', HISTORY, 'MODIS')).toEqual({
+      sensor: 'MODIS', value: 27975, median: 7571, baselineYears: 6, anomalyClass: 'much_above_normal',
+    });
+  });
+
+  it('is null without history or without a baseline', () => {
+    expect(historicalComparison('2010-07', HISTORY, 'MODIS')).toBeNull();
+    expect(historicalComparison('2003-07', HISTORY, 'MODIS')).toBeNull();
+    expect(historicalComparison('2024-07', null, 'MODIS')).toBeNull();
   });
 });
