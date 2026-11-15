@@ -53,6 +53,53 @@ VITE_SATELLITE_ATTRIBUTION=© Example Imagery
 
 If tiles fail to load, the map says so and still draws the fire points.
 
+
+## Running FireSync Locally
+
+### 1. Install dependencies
+
+From the repository root:
+
+```bash
+python -m pip install -r requirements.txt
+npm install
+npm --prefix firesync-app install
+```
+
+### 2. Create the demo database
+
+```bash
+npm run setup:demo
+python phase2_run.py --demo --no-plots
+```
+
+### 3. Start the frontend and backend
+
+```bash
+npm run dev:demo
+```
+
+### 4. Open the application
+
+Frontend:
+http://localhost:5173
+
+FastAPI:
+http://localhost:8000/docs
+
+Database health:
+http://localhost:8000/health
+
+### 5. Verify database connection
+
+The /health endpoint should report:
+- database_found: true
+- observations: a non-negative count
+
+Demo mode contains synthetic observations only.
+Full historical analytics require processed real data.
+
+
 ## Structure
 
 ```
