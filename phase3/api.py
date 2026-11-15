@@ -14,7 +14,7 @@ from phase2.model_preview import PreviewStore
 from phase2.phase2_config import load_config
 
 # backend for the web app (phase 3): B1 app, CORS, read-only database, /health, /regions
-#                                    B2 /observations, B3 /activity, B5 /comparison
+#                                    B2 /observations, B3 /activity, B5 /comparison, B6/B7 /history
 # run:   uvicorn phase3.api:app --reload        then open http://localhost:8000/docs
 # env:   PARSEC_DB_PATH        other database file (default data/fires.duckdb)
 #        PARSEC_DEMO=1         use the demo database instead
@@ -225,7 +225,7 @@ def comparison(region: str = 'british_columbia', month: str = MONTH,
                                      SUM(frp_mw) AS sum_frp_mw
                               FROM ({base}) GROUP BY 1 ORDER BY 1''', params)
         for d in daily:
-            d['date'], d['detections'] = str(d['date']), int(d['detections'])
+            d['date'], d['detections'] = str(pd.Timestamp(d['date']).date()), int(d['detections'])
         points = as_points(rows(con, f'SELECT * FROM ({base}) ORDER BY hash(id) LIMIT ?', params + [sample]))
         out.append({'sensor': sensor, 'detections': int(n), 'mean_frp_mw': mean_frp,
                     'active_days': int(days), 'daily': daily, 'sample': points})
@@ -288,6 +288,40 @@ def model_preview_calendar(start: str = '2023-07-01', end: str = '2023-07-31',
         return store.calendar(start, end, bbox)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+# B6/B7: the same calendar month across all downloaded years (+ anomaly z-score for B4)
+
+@app.get('/history')
+def history(region: str = 'british_columbia', month: int = Query(7, ge=1, le=12, description='1-12'),
+            sensor: Literal['MODIS', 'VIIRS', 'harmonized'] = 'MODIS', con=Depends(get_db)):
+    """One row per downloaded year for this calendar month: detections, total FRP, fire events
+    started, and how unusual the year is against the other years (z-score, percentile, class).
+    Only downloaded years appear; missing years are unknown, not zero fires.
+    Built from fire_calendar / fire_anomalies (phase2_run --only history --only analytics).
+    harmonized has no anomaly yet (anomalies are computed on raw sensors only)."""
+    region_bbox(region)
+    if sensor == 'harmonized':
+        run = latest_run(con)
+        where, params = "view = 'harmonized_estimate' AND model_run_id = ?", [run]
+    else:
+        where, params = "view = 'raw_observed' AND satellite = 'all' AND sensor_family = ?", [sensor]
+    try:
+        years = rows(con, f'''SELECT year, coverage_state, n_detections, frp_sum_mw, n_fire_events_started
+                              FROM fire_calendar WHERE region = ? AND month = ? AND {where}
+                              ORDER BY year''', [region, month] + params)
+        anomalies = [] if sensor == 'harmonized' else rows(con, '''
+            SELECT year, metric, z_score, percentile, anomaly_class, baseline_median, n_baseline_years
+            FROM fire_anomalies WHERE region = ? AND month = ? AND sensor_family = ? AND satellite = 'all'
+            ''', [region, month, sensor])
+    except duckdb.CatalogException:
+        raise HTTPException(503, 'no history yet: run phase2_run --only history --only analytics')
+    for y in years:
+        y['year'] = int(y['year'])
+        y['anomaly'] = {a['metric']: {k: a[k] for k in ('z_score', 'percentile', 'anomaly_class',
+                                                         'baseline_median', 'n_baseline_years')}
+                        for a in anomalies if int(a['year']) == y['year']}
+    return {'region': region, 'month': month, 'sensor': sensor, 'years': years}
 
 
 if __name__ == '__main__':
