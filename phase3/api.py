@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from phase1_database import DB_PATH, DEMO_DB_PATH
 from phase1_queries import _where_clause
+from phase2.model_preview import PreviewStore
 from phase2.phase2_config import load_config
 
 # backend for the web app (phase 3): B1 app, CORS, read-only database, /health, /regions
@@ -229,6 +230,64 @@ def comparison(region: str = 'british_columbia', month: str = MONTH,
         out.append({'sensor': sensor, 'detections': int(n), 'mean_frp_mw': mean_frp,
                     'active_days': int(days), 'daily': daily, 'sample': points})
     return {'region': region, 'month': month, 'sensors': out}
+
+
+# Bayesian model preview
+
+_preview_store: PreviewStore | None = None
+
+
+def reset_preview_store():
+    global _preview_store
+    _preview_store = None
+
+
+def get_preview_store() -> PreviewStore:
+    global _preview_store
+    if _preview_store is None:
+        d = os.environ.get('PARSEC_PREVIEW_DIR') or Path(__file__).resolve().parents[1] / 'model_preview' / 'bc-july-2023'
+        try:
+            _preview_store = PreviewStore(d)
+        except Exception as exc:
+            raise HTTPException(503, 'model preview not available') from exc
+    return _preview_store
+
+
+@app.get('/model-preview/metadata')
+def model_preview_metadata(store: PreviewStore = Depends(get_preview_store)):
+    return store.metadata
+
+
+@app.get('/model-preview/cells')
+def model_preview_cells(store: PreviewStore = Depends(get_preview_store)):
+    return store.geometry
+
+
+@app.get('/model-preview/validation')
+def model_preview_validation(store: PreviewStore = Depends(get_preview_store)):
+    return store.validation
+
+
+@app.get('/model-preview/field')
+def model_preview_field(start: str = '2023-07-01', end: str = '2023-07-31',
+                        bbox: str = '-139,48,-114,60',
+                        limit: int = Query(10000, ge=1, le=10000),
+                        offset: int = Query(0, ge=0),
+                        store: PreviewStore = Depends(get_preview_store)):
+    try:
+        return store.field(start, end, bbox, limit, offset)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get('/model-preview/calendar')
+def model_preview_calendar(start: str = '2023-07-01', end: str = '2023-07-31',
+                           bbox: str = '-139,48,-114,60',
+                           store: PreviewStore = Depends(get_preview_store)):
+    try:
+        return store.calendar(start, end, bbox)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
 
 
 if __name__ == '__main__':

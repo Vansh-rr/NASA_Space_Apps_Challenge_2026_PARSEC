@@ -14,7 +14,9 @@ On macOS or Linux, use `source .venv/bin/activate` instead of `.\.venv\Scripts\A
 | Analytics (`/analytics`) | Real, from `/comparison` | Anomaly, clusters and month-to-month change show "Unavailable" (they need multi-year data) |
 | Explore (`/`) | Demo data | Still California fixtures, labelled "Demo data" |
 
-- Data covers **British Columbia, July 2023 (UTC)** only. Other regions or months show an error or zeros.
+- The site shows whatever months are in your `data/fires.duckdb` (British Columbia, UTC). A database with only
+  July 2023 gives the numbers in this guide; the team's multi-year database (2003, 2010, 2017, 2018, 2021, 2023, 2024)
+  works for any month in those years. Months without data show zeros, other regions show an error.
 - **Harmonized = identity baseline** (harmonized FRP equals MODIS FRP, one point per match group).
   The Bayesian model in `phase2/algorithm/` is not connected to `model_runs` / `model_predictions` yet.
   The API always uses the newest model run, so once the Bayesian model saves a run there, the site picks it up.
@@ -98,6 +100,28 @@ shows 117,856 detections and a total FRP of about 1,481,756 MW.
 The API log shows one line per page load, for example
 `GET /comparison?region=british_columbia&month=2023-07&sample=300 ... 200 OK`. That line proves the UI really
 asked the API.
+
+## Running with the multi-year database
+
+Nothing in the code changes. Check these three things:
+
+1. `http://localhost:8000/health` shows about 1.9 million observations instead of 142,051.
+2. A model run exists: open `/comparison?month=2023-07&sample=3` and look at the harmonized block. If it says
+   `no harmonization run yet`, run step 3 once (stop the API first).
+3. On Compare, pick July 2023. MODIS and VIIRS should still show 24,195 and 117,856 if the same FIRMS products
+   were downloaded. Then try another loaded month, for example August 2023.
+
+## Running in GitHub Codespaces
+
+`localhost` in your browser is not the Codespace, so the UI needs the forwarded address of the API:
+
+1. Start the API (step 4). In the **Ports** tab, right-click port 8000 and set **Port Visibility** to **Public**.
+   A private port asks for a GitHub login, which blocks the UI's requests.
+2. Copy the forwarded address of port 8000 (it looks like `https://<name>-8000.app.github.dev`) and put it in
+   `firesync-app/.env` as `VITE_API_BASE_URL=...` with no trailing slash.
+3. Start the UI (step 5) and open the forwarded address of port 5173. If the page does not load, start it with
+   `npm run dev -- --host`.
+4. Check: the forwarded 8000 address plus `/health` opens in a private browser window without a login.
 
 ## 6. Checks before committing UI changes
 
