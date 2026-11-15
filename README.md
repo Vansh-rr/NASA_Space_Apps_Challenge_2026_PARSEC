@@ -3,9 +3,14 @@
 <!-- live-demo:start -->
 ## Hosting
 
-Cloud Run + Cloudflare Pages deployment configuration is prepared. Live URLs will be added after deployment is verified.
+The backend is live on Google Cloud Run:
 
-See [the deployment guide](docs/CLOUD_RUN_CLOUDFLARE.md) for the database check, Google Cloud deployment, Pages settings and CORS setup.
+- [API documentation](https://parsec-api-249255334425.europe-west1.run.app/docs)
+- [Health status](https://parsec-api-249255334425.europe-west1.run.app/health)
+
+The Cloudflare Pages frontend is awaiting deployment. After it is published, configure its exact production origin before opening the API-powered views.
+
+See [the deployment guide](docs/CLOUD_RUN_CLOUDFLARE.md) for the Pages build settings, CORS setup and final live demo checks.
 <!-- live-demo:end -->
 
 
