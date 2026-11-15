@@ -9,6 +9,7 @@ import { AboutPage } from '../pages/AboutPage';
 const ExplorePage = lazy(() => import('../pages/ExplorePage').then((m) => ({ default: m.ExplorePage })));
 const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })));
 const ComparePage = lazy(() => import('../pages/ComparePage').then((m) => ({ default: m.ComparePage })));
+const DownloadPage = lazy(() => import('../pages/DownloadPage').then((m) => ({ default: m.DownloadPage })));
 const ModelPreviewPage = lazy(() => import('../pages/ModelPreviewPage').then((m) => ({ default: m.ModelPreviewPage })));
 
 export function App() {
@@ -26,6 +27,7 @@ export function App() {
           <Route path="/" element={<ExplorePage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/compare" element={<ComparePage />} />
+          <Route path="/download" element={<DownloadPage />} />
           <Route path="/model-preview" element={<ModelPreviewPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
