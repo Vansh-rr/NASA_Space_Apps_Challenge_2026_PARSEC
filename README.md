@@ -90,3 +90,6 @@ not interchangeable with Earthdata login. A FIRMS hotspot CSV is not a Level-2 m
 See [Phase 2 setup](docs/phase2_setup.md), [organization and testing](docs/REPOSITORY_ORGANIZATION.md),
 [scientific input contract](phase2/algorithm/REAL_DATA_CONTRACT.md), and
 [original independent algorithm report](docs/ALGORITHM_TEST_REPORT.md).
+
+
+- Observation coverage (Task 2.8): see [docs/phase2_coverage.md](docs/phase2_coverage.md)

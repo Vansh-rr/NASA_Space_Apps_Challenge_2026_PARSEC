@@ -15,6 +15,7 @@ matplotlib>=3.8,<4
 fastapi>=0.110,<1
 uvicorn>=0.29,<1
 httpx>=0.27,<1
+netCDF4>=1.7,<2
 
 # Shared algorithm dependencies (same constraints as original independent package)
 -r phase2/algorithm/requirements.txt

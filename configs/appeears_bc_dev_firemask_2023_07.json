@@ -1,0 +1,35 @@
+{
+  "task_type": "area",
+  "task_name": "parsec_bc_dev_firemask_2023_07",
+  "params": {
+    "geo": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [-123.046875, 52.03125],
+              [-123.046875, 54.035156],
+              [-120.023437, 54.035156],
+              [-120.023437, 52.03125],
+              [-123.046875, 52.03125]
+            ]]
+          },
+          "properties": {}
+        }
+      ],
+      "fileName": "User-Drawn-Polygon"
+    },
+    "dates": [
+      {"startDate": "07-01-2023", "endDate": "07-31-2023", "recurring": false, "yearRange": [1950, 2050]}
+    ],
+    "layers": [
+      {"layer": "FireMask", "product": "VNP14A1.002"},
+      {"layer": "FireMask", "product": "MYD14A2.061"},
+      {"layer": "FireMask", "product": "MOD14A2.061"}
+    ],
+    "output": {"format": {"type": "netcdf4"}, "projection": "geographic", "additionalOptions": {}}
+  }
+}
