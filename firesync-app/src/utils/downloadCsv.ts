@@ -1,4 +1,3 @@
-
 import type {
   ActivityCell,
   FireObservation
@@ -92,7 +91,8 @@ export function downloadFireObservations(
 // 2. Fire Activity History CSV
 export function downloadFireHistory(
   cells: ActivityCell[],
-  filename = 'firesync_fire_history.csv'
+  filename = 'firesync_fire_history.csv',
+  isDemo = false
 ): void {
   const headers = [
     'Year',
@@ -107,7 +107,7 @@ export function downloadFireHistory(
     cell.month,
     `${cell.year}-${String(cell.month).padStart(2, '0')}`,
     cell.value,
-    'Demo'
+    isDemo ? 'Demo' : 'NASA FIRMS MODIS'
   ]);
 
   saveCsv(filename, createCsv(headers, rows));
@@ -116,7 +116,8 @@ export function downloadFireHistory(
 // 3. Burning Activity Calendar CSV
 export function downloadBurningCalendar(
   rows: FireCalendarRow[],
-  filename = 'firesync_burning_calendar.csv'
+  filename = 'firesync_burning_calendar.csv',
+  isDemo = false
 ): void {
   const headers = [
     'Year',
@@ -135,7 +136,7 @@ export function downloadBurningCalendar(
     row.value,
     row.historicalPercentile,
     row.activityCategory,
-    true
+    isDemo
   ]);
 
   saveCsv(filename, createCsv(headers, data));
@@ -144,7 +145,8 @@ export function downloadBurningCalendar(
 // 4. Fire Analytics CSV
 export function downloadFireAnalytics(
   rows: FireCalendarRow[],
-  filename = 'firesync_fire_analytics.csv'
+  filename = 'firesync_fire_analytics.csv',
+  isDemo = false
 ): void {
   const headers = [
     'Year',
@@ -172,7 +174,7 @@ export function downloadFireAnalytics(
     row.activityCategory,
     row.anomalyZScore !== null &&
       Math.abs(row.anomalyZScore) >= 2,
-    true
+    isDemo
   ]);
 
   saveCsv(filename, createCsv(headers, data));
