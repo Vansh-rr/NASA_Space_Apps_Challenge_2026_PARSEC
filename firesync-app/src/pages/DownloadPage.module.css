@@ -1,0 +1,418 @@
+
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Heading */
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.headingIcon {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff0e5;
+  color: #eb6a24;
+  border-radius: 14px;
+}
+
+.heading h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  color: #172638;
+}
+
+.heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 15px;
+}
+
+/* Period filter */
+
+.filterCard {
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  color: #eb6a24;
+}
+
+.sectionTitle h2 {
+  margin: 0;
+  font-size: 19px;
+  color: #172638;
+}
+
+.filterCard label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.select {
+  width: 100%;
+  max-width: 340px;
+  height: 46px;
+  padding: 0 14px;
+  background: #ffffff;
+  color: #172638;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: 2px solid #eb6a24;
+  outline-offset: 2px;
+}
+
+.helperText {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Download cards */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.downloadCard {
+  display: flex;
+  flex-direction: column;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  transition: box-shadow 0.2s ease;
+}
+
+.downloadCard:hover {
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.07);
+}
+
+.fileIcon {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff0e5;
+  color: #eb6a24;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.downloadCard h2 {
+  margin: 0 0 12px;
+  color: #172638;
+  font-size: 21px;
+}
+
+.downloadCard p {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0 0 24px;
+  flex-grow: 1;
+}
+
+/* File information */
+
+.info {
+  display: flex;
+  gap: 32px;
+  padding: 18px 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.info div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.info strong {
+  color: #172638;
+  font-size: 18px;
+}
+
+/* Download button */
+
+.downloadButton {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+  border-radius: 9px;
+  background: #eb6a24;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.downloadButton:hover:not(:disabled) {
+  background: #cf5315;
+}
+
+.downloadButton:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* Start Date and End Date */
+
+.dateRange {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 18px;
+}
+
+.dateField {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dateField label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.dateInput {
+  width: 100%;
+  height: 50px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #172638;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dateInput:focus {
+  outline: 2px solid #eb6a24;
+  outline-offset: 2px;
+}
+
+/* Selected date range */
+
+.selectedPeriod {
+  margin-top: 22px;
+  padding: 14px 16px;
+  background: #fff4eb;
+  border: 1px solid #fed7aa;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #9a4517;
+  font-size: 14px;
+}
+
+.selectedPeriod strong {
+  color: #172638;
+}
+
+/* Error message */
+
+.error {
+  margin: 14px 0 0;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+/* Analytics preview */
+
+.previewCard {
+  padding: 26px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  min-width: 0;
+}
+
+.previewHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.previewHeading .sectionTitle {
+  margin-bottom: 10px;
+}
+
+/* Show / Hide graph button */
+
+.secondaryButton {
+  padding: 10px 16px;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondaryButton:hover {
+  background: #ffedd5;
+}
+
+/* Statistics cards */
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.metrics > div {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.metrics span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.metrics strong {
+  font-size: 21px;
+  color: #172638;
+  overflow-wrap: anywhere;
+}
+
+/* Graph */
+
+.chartHint {
+  font-size: 13px;
+  color: #64748b;
+  margin: 16px 0;
+}
+
+.chartWrap {
+  width: 100%;
+  height: 350px;
+  min-width: 0;
+}
+
+.empty {
+  color: #64748b;
+  padding: 30px 0;
+}
+
+/* Data notice */
+
+.notice {
+  padding: 20px 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.notice strong {
+  color: #172638;
+  font-size: 15px;
+}
+
+.notice p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Responsive layout */
+
+@media (max-width: 850px) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .heading h1 {
+    font-size: 23px;
+  }
+
+  .downloadCard {
+    padding: 22px;
+  }
+
+  .select {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .dateRange {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .previewCard {
+    padding: 16px;
+  }
+
+  .chartWrap {
+    height: 290px;
+  }
+
+  .metrics strong {
+    font-size: 17px;
+  }
+}
