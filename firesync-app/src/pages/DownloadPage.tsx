@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from 'react';
 
 import {
@@ -22,10 +21,17 @@ import {
   YAxis
 } from 'recharts';
 
+import { ErrorState, LoadingState } from '../components/shared/States';
+import { DATA_YEARS } from '../data/dataYears';
+import { useServiceQuery } from '../hooks/useServiceQuery';
 import {
-  getActivityMatrix,
-  getExploreObservations
+  ACTIVITY_UNIT,
+  EXPLORE_REGION,
+  IS_DEMO_DATA,
+  fetchActivityMatrix,
+  fetchExploreObservations
 } from '../services/fireData';
+import type { FireObservation } from '../types/fire';
 
 import {
   downloadBurningCalendar,
@@ -42,18 +48,26 @@ import {
 import shared from '../styles/shared.module.css';
 import styles from './DownloadPage.module.css';
 
-const MIN_DATE = '2020-01-01';
-const MAX_DATE = '2024-12-31';
+const MIN_DATE = `${Math.min(...DATA_YEARS)}-01-01`;
+const MAX_DATE = `${Math.max(...DATA_YEARS)}-12-31`;
+/** Observations are fetched one month at a time, so very long ranges are capped. */
+const MAX_EXPORT_MONTHS = 36;
 
 export function DownloadPage() {
   const [startDate, setStartDate] =
-    useState('2024-01-01');
+    useState('2023-01-01');
 
   const [endDate, setEndDate] =
-    useState('2024-12-31');
+    useState('2023-12-31');
 
   const [showChart, setShowChart] =
     useState(true);
+
+  const [exporting, setExporting] =
+    useState(false);
+
+  const [exportError, setExportError] =
+    useState<string | null>(null);
 
   const isValidDateRange = Boolean(
     startDate &&
@@ -63,36 +77,15 @@ export function DownloadPage() {
     startDate <= endDate
   );
 
-  // Retrieve the FireSync activity data
-  const { cells } = useMemo(
-    () => getActivityMatrix(),
-    []
+  // Monthly detection counts from the PARSEC API (same source as the Explore heatmap)
+  const activity = useServiceQuery(
+    'download-activity',
+    fetchActivityMatrix
   );
 
-  const allObservations = useMemo(
-    () => getExploreObservations(null),
-    []
-  );
-
-  // Filter observations by date
-  const observations = useMemo(
-    () =>
-      isValidDateRange
-        ? allObservations.filter(fire => {
-            const date = fire.observedAt.slice(0, 10);
-
-            return (
-              date >= startDate &&
-              date <= endDate
-            );
-          })
-        : [],
-    [
-      allObservations,
-      isValidDateRange,
-      startDate,
-      endDate
-    ]
+  const cells = useMemo(
+    () => activity.data ?? [],
+    [activity.data]
   );
 
   // Filter monthly fire activity
@@ -115,6 +108,22 @@ export function DownloadPage() {
         : [],
     [cells, startDate, endDate, isValidDateRange]
   );
+
+  // Months in the range that actually contain detections
+  const exportMonths = useMemo(
+    () =>
+      filteredCells
+        .filter(cell => cell.value > 0)
+        .sort((a, b) => a.year - b.year || a.month - b.month),
+    [filteredCells]
+  );
+
+  const detectionsInMonths = useMemo(
+    () => exportMonths.reduce((sum, cell) => sum + cell.value, 0),
+    [exportMonths]
+  );
+
+  const tooManyMonths = exportMonths.length > MAX_EXPORT_MONTHS;
 
   // Calculate historical statistics using all years
   const allCalendarRows = useMemo(
@@ -146,6 +155,73 @@ export function DownloadPage() {
     isValidDateRange && calendarRows.length > 0;
 
   const suffix = `${startDate}_to_${endDate}`;
+
+  // Fetch the detections month by month, then trim to the exact dates
+  async function handleObservationsDownload() {
+    setExporting(true);
+    setExportError(null);
+
+    try {
+      const collected: FireObservation[] = [];
+
+      for (const cell of exportMonths) {
+        const rows = await fetchExploreObservations({
+          year: cell.year,
+          month: cell.month
+        });
+
+        collected.push(...rows);
+      }
+
+      const inRange = collected.filter(fire => {
+        const date = fire.observedAt.slice(0, 10);
+        return date >= startDate && date <= endDate;
+      });
+
+      if (!inRange.length) {
+        setExportError(
+          'No detections were found for the selected dates.'
+        );
+        return;
+      }
+
+      downloadFireObservations(
+        inRange,
+        `firesync_observations_${suffix}.csv`
+      );
+    } catch (err) {
+      setExportError(
+        err instanceof Error
+          ? err.message
+          : 'The observations could not be downloaded.'
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  if (activity.status === 'error') {
+    return (
+      <main className={shared.page}>
+        <div className={styles.container}>
+          <ErrorState
+            message={activity.error ?? ''}
+            onRetry={activity.retry}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  if (activity.status !== 'ready') {
+    return (
+      <main className={shared.page}>
+        <div className={styles.container}>
+          <LoadingState label="Loading fire data…" />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={shared.page}>
@@ -245,7 +321,7 @@ export function DownloadPage() {
             <h2>Fire Observations</h2>
 
             <p>
-              Download sampled fire detections including
+              Download MODIS fire detections for British Columbia including
               coordinates, timestamps, satellite sensor and FRP.
             </p>
 
@@ -256,9 +332,9 @@ export function DownloadPage() {
               </div>
 
               <div>
-                <span>Records</span>
+                <span>Detections in months</span>
                 <strong>
-                  {observations.length.toLocaleString()}
+                  {detectionsInMonths.toLocaleString()}
                 </strong>
               </div>
             </div>
@@ -267,18 +343,32 @@ export function DownloadPage() {
               type="button"
               className={styles.downloadButton}
               disabled={
-                !isValidDateRange || !observations.length
+                !isValidDateRange ||
+                !exportMonths.length ||
+                tooManyMonths ||
+                exporting
               }
-              onClick={() =>
-                downloadFireObservations(
-                  observations,
-                  `firesync_observations_${suffix}.csv`
-                )
-              }
+              onClick={handleObservationsDownload}
             >
               <Download size={18} />
-              Download Observations CSV
+              {exporting
+                ? 'Preparing CSV…'
+                : 'Download Observations CSV'}
             </button>
+
+            {tooManyMonths && (
+              <p className={styles.error} role="alert">
+                Observation exports are limited to
+                {' '}{MAX_EXPORT_MONTHS} months with data.
+                Please choose a shorter period.
+              </p>
+            )}
+
+            {exportError && (
+              <p className={styles.error} role="alert">
+                {exportError}
+              </p>
+            )}
           </section>
 
           {/* FIRE HISTORY */}
@@ -290,7 +380,7 @@ export function DownloadPage() {
             <h2>Fire Activity History</h2>
 
             <p>
-              Export monthly detection counts used by
+              Export monthly MODIS detection counts used by
               the Explore fire activity heatmap.
             </p>
 
@@ -315,7 +405,8 @@ export function DownloadPage() {
               onClick={() =>
                 downloadFireHistory(
                   filteredCells,
-                  `firesync_history_${suffix}.csv`
+                  `firesync_history_${suffix}.csv`,
+                  IS_DEMO_DATA
                 )
               }
             >
@@ -361,7 +452,8 @@ export function DownloadPage() {
               onClick={() =>
                 downloadFireAnalytics(
                   calendarRows,
-                  `firesync_fire_analytics_${suffix}.csv`
+                  `firesync_fire_analytics_${suffix}.csv`,
+                  IS_DEMO_DATA
                 )
               }
             >
@@ -405,7 +497,8 @@ export function DownloadPage() {
               onClick={() =>
                 downloadBurningCalendar(
                   calendarRows,
-                  `firesync_burning_calendar_${suffix}.csv`
+                  `firesync_burning_calendar_${suffix}.csv`,
+                  IS_DEMO_DATA
                 )
               }
             >
@@ -572,10 +665,13 @@ export function DownloadPage() {
           <strong>Data Notice</strong>
 
           <p>
-            FireSync currently uses generated demonstration
-            data, not live satellite measurements.
-            Monthly fire counts are demonstration aggregates.
-            Observation exports contain sampled demo points.
+            Data are NASA FIRMS MODIS fire detections for
+            British Columbia ({ACTIVITY_UNIT}), served by the
+            PARSEC API ({EXPLORE_REGION}). Years without
+            downloaded data appear as zero-detection months.
+            Observation exports download the detections of every
+            month that overlaps your dates and then trim them to
+            the exact start and end date (UTC).
           </p>
 
           <p>
@@ -583,7 +679,7 @@ export function DownloadPage() {
             entire month whenever it overlaps your selected
             dates. Anomalies compare each month against the
             other available years for the same calendar month
-            (2020–2024). A z-score with absolute value at
+            ({MIN_DATE.slice(0, 4)}–{MAX_DATE.slice(0, 4)}). A z-score with absolute value at
             least 2 is flagged as unusual.
           </p>
         </div>
