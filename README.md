@@ -1,5 +1,14 @@
 # PARSEC / FireSync
 
+<!-- live-demo:start -->
+## Hosting
+
+Cloud Run + Cloudflare Pages deployment configuration is prepared. Live URLs will be added after deployment is verified.
+
+See [the deployment guide](docs/CLOUD_RUN_CLOUDFLARE.md) for the database check, Google Cloud deployment, Pages settings and CORS setup.
+<!-- live-demo:end -->
+
+
 Read [START_HERE.md](START_HERE.md) for setup, safe Git application, demo startup and limitations. The audit findings and test evidence are in [docs/REPOSITORY_AUDIT.md](docs/REPOSITORY_AUDIT.md) and [docs/REPAIR_TEST_RESULTS.md](docs/REPAIR_TEST_RESULTS.md).
 
 Run every offline check with one command:

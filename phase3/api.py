@@ -4,6 +4,7 @@ import calendar
 from datetime import date
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
 import duckdb
 import pandas as pd
@@ -26,9 +27,23 @@ from phase2.phase2_config import load_config
 app = FastAPI(title='PARSEC API', version='0.1.0',
               description='MODIS / VIIRS / harmonized fire data for the PARSEC web app')
 
+
+def cors_origins(raw: str) -> list[str]:
+    """Empty disables cross-origin access; normalize explicit browser origins."""
+    origins = [o.strip().rstrip('/') for o in raw.split(',') if o.strip()]
+    if '*' in origins:
+        if origins != ['*']:
+            raise ValueError('Use explicit CORS origins or a single wildcard, not both')
+        return origins
+    for origin in origins:
+        u = urlsplit(origin)
+        if u.scheme not in ('http', 'https') or not u.hostname or u.username or u.password or u.path or u.query or u.fragment:
+            raise ValueError('PARSEC_CORS_ORIGINS requires origins without paths or credentials')
+    return list(dict.fromkeys(origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in os.environ.get('PARSEC_CORS_ORIGINS', '*').split(',')],
+    allow_origins=cors_origins(os.environ.get('PARSEC_CORS_ORIGINS', '*')),
     allow_methods=['GET'],
     allow_headers=['*'],
     expose_headers=['X-Total-Count'],      # so the frontend can read how many rows exist

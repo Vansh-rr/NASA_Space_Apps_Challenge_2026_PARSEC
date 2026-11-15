@@ -1,0 +1,37 @@
+name: Cloud Run container checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install fixture-building dependencies
+        run: python -m pip install -r requirements.txt -c requirements-tested.txt
+      - name: Build isolated synthetic database for container testing
+        run: |
+          python -m phase2.demo
+          python -m phase2.phase2_run --demo --no-plots
+          cp data/demo_fires.duckdb data/fires.duckdb
+      - name: Build runtime-only container
+        run: docker build -t parsec-api-ci .
+      - name: Run with explicit synthetic provenance
+        run: >-
+          docker run -d --name parsec-api-ci -p 8080:8080
+          -e PARSEC_DEMO=1 -e PARSEC_CORS_ORIGINS=https://parsec-ci.pages.dev
+          parsec-api-ci
+      - name: Verify endpoints, database, preview and restricted CORS
+        run: >-
+          python tools/smoke_api.py --api-url http://localhost:8080
+          --frontend-origin https://parsec-ci.pages.dev --expect-demo --wait-seconds 60
+      - name: Container logs
+        if: always()
+        run: docker logs parsec-api-ci || true

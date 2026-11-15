@@ -1,3 +1,5 @@
+For public Google Cloud Run + Cloudflare Pages hosting, use [CLOUD_RUN_CLOUDFLARE.md](CLOUD_RUN_CLOUDFLARE.md). The instructions below are for local development.
+
 # Website setup
 
 Run from the repository root. Use Python 3.12, GCC and Node.js 24 LTS.

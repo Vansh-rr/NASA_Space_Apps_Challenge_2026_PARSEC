@@ -34,3 +34,9 @@ algorithm_test_output/
 *.zip
 .Rhistory
 .DS_Store
+
+# Local deployment responses and credentials remain outside source control.
+/deployment.local.json
+/.venv-api/
+**/*service-account*.json
+**/*credentials*.json
