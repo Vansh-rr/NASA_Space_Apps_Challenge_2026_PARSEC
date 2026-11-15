@@ -1,1 +1,25 @@
-
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "PARSEC: harmonizing MODIS and VIIRS active fire records (FireSync)"
+type: software
+abstract: >-
+  PARSEC matches NASA FIRMS active fire detections from MODIS and VIIRS,
+  builds a harmonized fire record with an identity baseline and an
+  exploratory Bayesian model, and serves it through an API and the
+  FireSync web app. Built for the NASA Space Apps Challenge 2026.
+authors:
+  - family-names: "Rojivadia"
+    given-names: "Vansh Renishkumar"
+  - family-names: "Chai"
+    given-names: "Chun Xuan"
+  - family-names: "Esanbayeva"
+    given-names: "Shakhlo"
+  - family-names: "Nath"
+    given-names: "Kailash"
+  - family-names: "Pavlova"
+    given-names: "Nikol"
+  - family-names: "Pushkar"
+    given-names: "Prajeet"
+repository-code: "https://github.com/Vansh-rr/NASA_Space_Apps_Challenge_2026_PARSEC"
+license: MIT
+date-released: "2026-11-15"
