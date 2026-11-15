@@ -1,7 +1,7 @@
 import { Calendar, ChevronDown, Globe } from 'lucide-react';
 import { DEMO_MONTHS } from '../../data/demoModel';
 import { REGIONS } from '../../data/regions';
-import { monthLabel, parseMonth, toMonthKey } from '../../utils/dates';
+import { parseMonth, toMonthKey } from '../../utils/dates';
 import shared from '../../styles/shared.module.css';
 
 interface SelectProps {

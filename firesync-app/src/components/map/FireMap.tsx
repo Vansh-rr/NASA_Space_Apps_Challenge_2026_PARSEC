@@ -115,7 +115,6 @@ export function FireMap({
     const container = containerRef.current;
     if (!container) return;
 
-    const scale = compact ? 0.8 : 1;
     const map = new maplibregl.Map({
       container,
       style: buildMapStyle(tone),

@@ -6,7 +6,6 @@ import { AnalyticsFilters } from '../components/filters/AnalyticsFilters';
 import { FireMap } from '../components/map/FireMap';
 import { MetricsGrid } from '../components/metrics/MetricsGrid';
 import { DemoBadge, ErrorState, LoadingState } from '../components/shared/States';
-import { REFERENCE_MONTH, REFERENCE_REGION } from '../data/demoModel';
 import { getRegion } from '../data/regions';
 import { useAnalytics } from '../hooks/useAnalytics';
 import type { AnalyticsFilters as Filters } from '../types/analytics';
@@ -14,7 +13,7 @@ import { monthLabel } from '../utils/dates';
 import shared from '../styles/shared.module.css';
 import styles from './AnalyticsPage.module.css';
 
-const INITIAL: Filters = { regionId: REFERENCE_REGION, month: REFERENCE_MONTH, sensors: ['modis', 'viirs'] };
+const INITIAL: Filters = { regionId: 'british_columbia', month: '2023-07', sensors: ['modis', 'viirs'] };
 
 export function AnalyticsPage() {
   const [filters, setFilters] = useState<Filters>(INITIAL);

@@ -44,6 +44,18 @@ export function fillDailyCounts(month: string, rows: Array<{ date: string; detec
   }));
 }
 
+/** Fills every date of `month` with `sum_frp_mw`, using 0 when a day is missing or `sum_frp_mw` is null. */
+export function fillDailySums(
+  month: string,
+  rows: Array<{ date: string; detections?: number; sum_frp_mw?: number | null }>,
+): number[] {
+  const byDate = new Map<string, number>();
+  for (const d of rows) {
+    byDate.set(d.date.slice(0, 10), d.sum_frp_mw ?? 0);
+  }
+  return datesOfMonth(month).map((date) => byDate.get(date) ?? 0);
+}
+
 /** Loads all three sensor records for one region and month. */
 export async function fetchComparison(regionId: string, month: string, signal?: AbortSignal): Promise<ComparisonResponse> {
   const res = await getJson<ApiComparisonResponse>('/comparison', { region: regionId, month, sample: 300 }, signal);

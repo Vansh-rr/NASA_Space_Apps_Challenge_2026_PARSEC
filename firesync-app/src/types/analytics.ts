@@ -49,6 +49,4 @@ export interface AnalyticsResponse {
   isDemo: boolean;
   updatedAt: string | null;
   methodology: string;
-  peakPeriods: PeakPeriod[];
-  currentVsHistory: HistoricalMonth;
 }
