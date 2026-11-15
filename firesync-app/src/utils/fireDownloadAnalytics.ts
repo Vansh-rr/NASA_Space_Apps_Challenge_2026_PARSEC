@@ -1,4 +1,3 @@
-
 import type { ActivityCell } from '../types/fire';
 
 export interface FireCalendarRow extends ActivityCell {
