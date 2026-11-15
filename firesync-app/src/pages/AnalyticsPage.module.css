@@ -1,0 +1,214 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px 20px;
+  padding: 12px 24px;
+  border-radius: var(--radius);
+}
+
+.sensors {
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.sensors legend {
+  padding: 0;
+}
+
+.sensorPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 0 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pill:has(input:focus-visible) {
+  outline: 3px solid #2f7de1;
+  outline-offset: 2px;
+}
+
+.pillChecked {
+  border-color: var(--orange);
+  background: var(--orange-soft);
+  color: #8f3f0a;
+}
+
+.box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #8b95a1;
+  border-radius: 4px;
+  background: var(--surface);
+  color: #ffffff;
+}
+
+.pillChecked .box {
+  border-color: #c85d12;
+  background: #c85d12;
+}
+
+.sensorHelp {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.statusBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  color: var(--text-body);
+  font-size: 14.5px;
+}
+
+.stale {
+  color: #a3262c;
+}
+
+.linkButton {
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: #1c5fb8;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 104px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+}
+
+.metricIcon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  background: var(--orange-soft);
+  color: #c85d12;
+}
+
+.metricBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.metricTitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.metricValue {
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.metricNote {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.metricChange {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--delta-red);
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.metricDown {
+  color: #1f6f8b;
+}
+
+.metricNoChange {
+  flex: 0 1 96px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.map {
+  height: 450px;
+}
+
+@media (max-width: 900px) {
+  .sensors {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .map {
+    height: 520px;
+  }
+}
+
+@media (max-width: 767px) {
+  .charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .filters > div {
+    flex: 1 1 100%;
+  }
+
+  .metrics {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .map {
+    height: 440px;
+  }
+}
+
+

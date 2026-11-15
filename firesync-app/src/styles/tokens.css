@@ -1,0 +1,42 @@
+:root {
+  --page-bg: #f4f5f7;
+  --surface: #ffffff;
+  --header-bg: #0e1c2c;
+  --primary: #101e2d;
+  --nav-active: #344a5b;
+  --text: #15202d;
+  --text-body: #344451;
+  --text-muted: #5f6b78;
+  --border: #d7dbe1;
+  --border-strong: #b9c2ce;
+  --orange: #ec7d28;
+  --brand-orange: #ff7b40;
+  --orange-soft: #fff1e7;
+  --bar-peach: #fbd5bf;
+  --modis: #397fca;
+  --modis-tint: #eaf2fd;
+  --viirs: #dc4f9c;
+  --viirs-tint: #fcecf5;
+  --harmonized: #ec7d28;
+  --harmonized-tint: #fff1e7;
+  --delta-red: #c23a40;
+  --status: #2c8a68;
+  --map-panel: rgba(9, 24, 32, 0.92);
+  --radius: 10px;
+  --radius-card: 14px;
+  --gap: 20px;
+  --page-pad: 44px;
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+@media (max-width: 1199px) {
+  :root {
+    --page-pad: 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --page-pad: 16px;
+  }
+}
