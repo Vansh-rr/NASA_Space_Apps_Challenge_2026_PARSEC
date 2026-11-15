@@ -5,7 +5,6 @@ import { SectionHeading } from '../components/compare/SectionHeading';
 import { SensorMapCard } from '../components/compare/SensorMapCard';
 import { SensorTrendCard } from '../components/compare/SensorTrendCard';
 import { ErrorState, LoadingState } from '../components/shared/States';
-import { REFERENCE_MONTH, REFERENCE_REGION } from '../data/demoModel';
 import { getRegion } from '../data/regions';
 import { useComparisonData } from '../hooks/useComparisonData';
 import { useSyncedMapCamera } from '../hooks/useSyncedMapCamera';
@@ -16,7 +15,7 @@ import { monthRangeLabel } from '../utils/dates';
 import shared from '../styles/shared.module.css';
 import styles from './ComparePage.module.css';
 
-const INITIAL: ComparisonFilters = { regionId: REFERENCE_REGION, month: REFERENCE_MONTH, focusedSensor: 'harmonized' };
+const INITIAL: ComparisonFilters = { regionId: 'british_columbia', month: '2023-07', focusedSensor: 'harmonized' };
 
 export function ComparePage() {
   const [filters, setFilters] = useState<ComparisonFilters>(INITIAL);

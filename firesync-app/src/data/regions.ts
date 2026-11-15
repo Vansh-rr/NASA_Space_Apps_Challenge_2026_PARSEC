@@ -40,6 +40,20 @@ export const CITIES = {
 
 export const REGIONS: Region[] = [
   {
+    id: 'british_columbia',
+    label: 'British Columbia, Canada',
+    bounds: [-139, 48, -114, 60],
+    cities: [
+      city('Vancouver', -123.12, 49.28),
+      city('Kamloops', -120.33, 50.67),
+      city('Kelowna', -119.50, 49.89),
+      city('Prince George', -122.75, 53.92),
+      city('Fort St. John', -120.85, 56.25),
+    ],
+    scale: 1,
+    clusters: [{ longitude: -121, latitude: 52, spread: 0.4, weight: 1 }],
+  },
+  {
     id: 'california',
     label: 'California, USA',
     bounds: [-124.6, 32.4, -114.0, 42.1],
