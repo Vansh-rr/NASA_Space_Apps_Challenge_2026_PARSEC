@@ -44,7 +44,8 @@ export function historyMetrics(month: string, history: ApiHistory | null): { zSc
   const row = history?.years.find((y) => y.year === year);
   return {
     zScore: row?.anomaly?.n_detections?.z_score ?? null,
-    clusters: row?.n_fire_events_started ?? null,
+    // 0 events in a month with detections means events were not computed for that year (2003, 2010)
+    clusters: row && row.n_fire_events_started && row.n_fire_events_started > 0 ? row.n_fire_events_started : null,
   };
 }
 
