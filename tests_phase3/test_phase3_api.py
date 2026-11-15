@@ -121,3 +121,37 @@ def test_comparison_per_sensor(harmonized_client):
 def test_comparison_without_model_run(client):
     by = {s['sensor']: s for s in client.get('/comparison').json()['sensors']}
     assert by['harmonized']['detections'] == 0 and 'note' in by['harmonized']
+
+
+# B6/B7 history
+
+@pytest.fixture
+def history_client(phase1_db, cfg, monkeypatch):
+    """phase1_db + phase 2 including history and analytics."""
+    from phase2.phase2_run import run_pipeline
+    run_pipeline(['flags', 'overlap', 'matching', 'events', 'features', 'splits', 'baseline',
+                  'history', 'analytics'], start='2023-07-01', end='2023-07-31',
+                 db_path=phase1_db, cfg=cfg, plots=False)
+    monkeypatch.setenv('PARSEC_DB_PATH', str(phase1_db))
+    return TestClient(app)
+
+
+def test_history_per_year(history_client):
+    body = history_client.get('/history?month=7&sensor=MODIS').json()
+    assert body['sensor'] == 'MODIS' and [y['year'] for y in body['years']] == [2023]
+    y = body['years'][0]
+    assert y['n_detections'] == 101
+    assert y['anomaly']['n_detections']['anomaly_class'] == 'insufficient_history'   # one year only
+    harm = history_client.get('/history?month=7&sensor=harmonized').json()['years']
+    assert len(harm) == 1 and harm[0]['anomaly'] == {}
+
+
+def test_history_bad_input_and_no_tables(client):
+    assert client.get('/history?month=13').status_code == 422
+    assert client.get('/history?region=mars').status_code == 404
+    assert client.get('/history?month=7').status_code == 503          # history not built yet
+
+
+def test_comparison_dates_are_plain(harmonized_client):
+    daily = harmonized_client.get('/comparison?month=2023-07&sample=0').json()['sensors'][0]['daily']
+    assert daily and len(daily[0]['date']) == 10
