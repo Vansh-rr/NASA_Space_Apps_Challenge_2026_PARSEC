@@ -43,3 +43,40 @@ def test_database_is_read_only(client):
 def test_cors_allows_the_frontend(client):
     r = client.get('/health', headers={'Origin': 'http://localhost:5173'})
     assert r.headers.get('access-control-allow-origin') in ('*', 'http://localhost:5173')
+
+
+# B2 observations
+
+@pytest.fixture
+def harmonized_client(phase1_db, cfg, monkeypatch):
+    """phase1_db + phase 2 up to the identity baseline, so harmonized points exist."""
+    from phase2.phase2_run import run_pipeline
+    run_pipeline(['flags', 'overlap', 'matching', 'events', 'features', 'splits', 'baseline'],
+                 start='2023-07-01', db_path=phase1_db, cfg=cfg, plots=False)
+    monkeypatch.setenv('PARSEC_DB_PATH', str(phase1_db))
+    return TestClient(app)
+
+
+def test_observations_raw_sensors(client):
+    r = client.get('/observations', params={'month': '2023-07', 'sensor': 'MODIS'})
+    assert r.status_code == 200 and r.headers['x-total-count'] == '101'
+    first = r.json()[0]
+    assert set(first) == {'id', 'latitude', 'longitude', 'frp_mw', 'observed_at', 'sensor', 'is_demo'}
+    assert first['sensor'] == 'MODIS' and first['is_demo'] is False
+    viirs = client.get('/observations', params={'month': '2023-07', 'sensor': 'VIIRS', 'limit': 10})
+    assert len(viirs.json()) == 10 and viirs.headers['x-total-count'] == '305'
+    assert client.get('/observations', params={'month': '2023-08'}).json() == []
+
+
+def test_observations_harmonized(harmonized_client):
+    r = harmonized_client.get('/observations', params={'month': '2023-07', 'sensor': 'harmonized'})
+    points = r.json()
+    assert r.status_code == 200 and len(points) == 100            # one per match group
+    assert {p['sensor'] for p in points} == {'harmonized'}
+    assert all(40 <= p['frp_mw'] <= 59 for p in points)            # identity = MODIS FRP
+
+
+def test_observations_bad_input(client):
+    assert client.get('/observations', params={'region': 'mars'}).status_code == 404
+    assert client.get('/observations', params={'month': 'july'}).status_code == 422
+    assert client.get('/observations', params={'sensor': 'GOES'}).status_code == 422

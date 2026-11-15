@@ -1,15 +1,19 @@
 from __future__ import annotations
 import os
 from pathlib import Path
+from typing import Literal
 
 import duckdb
-from fastapi import Depends, FastAPI, HTTPException
+import pandas as pd
+from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from phase1_database import DB_PATH, DEMO_DB_PATH
+from phase1_queries import _where_clause
 from phase2.phase2_config import load_config
 
-# backend for the web app (phase 3, task B1): app, CORS, read-only database, /health, /regions
+# backend for the web app (phase 3): B1 app, CORS, read-only database, /health, /regions
+#                                    B2 /observations
 # run:   uvicorn phase3.api:app --reload        then open http://localhost:8000/docs
 # env:   PARSEC_DB_PATH        other database file (default data/fires.duckdb)
 #        PARSEC_DEMO=1         use the demo database instead
@@ -23,6 +27,7 @@ app.add_middleware(
     allow_origins=[o.strip() for o in os.environ.get('PARSEC_CORS_ORIGINS', '*').split(',')],
     allow_methods=['GET'],
     allow_headers=['*'],
+    expose_headers=['X-Total-Count'],      # so the frontend can read how many rows exist
 )
 
 
@@ -72,6 +77,74 @@ def regions():
     cfg = load_config(demo_mode=is_demo())
     return [{'key': key, 'name': r.name, 'bbox': list(r.bbox), 'is_default': key == cfg.default_region}
             for key, r in cfg.regions.items()]
+
+
+# shared helpers for the endpoints
+
+def region_bbox(region: str) -> tuple:
+    cfg = load_config(demo_mode=is_demo())
+    if region not in cfg.regions:
+        raise HTTPException(404, f'unknown region {region!r}, use one of {sorted(cfg.regions)}')
+    return cfg.regions[region].bbox
+
+
+MONTH = Query('2023-07', pattern=r'^\d{4}-(0[1-9]|1[0-2])$', description='YYYY-MM')
+
+
+def month_range(month: str) -> tuple[str, str]:
+    """'2023-07' -> ('2023-07-01', '2023-07-31')"""
+    first = pd.Period(month, freq='M')
+    return str(first.start_time.date()), str(first.end_time.date())
+
+
+def latest_run(con) -> str | None:
+    """Newest harmonization run (task 2.13); the harmonized view comes from its predictions."""
+    try:
+        got = con.execute('SELECT model_run_id FROM model_runs ORDER BY created_at DESC LIMIT 1').fetchall()
+    except duckdb.CatalogException:
+        return None
+    return got[0][0] if got else None
+
+
+# B2: fire detections for the map
+
+@app.get('/observations')
+def observations(response: Response, region: str = 'british_columbia', month: str = MONTH,
+                 sensor: Literal['MODIS', 'VIIRS', 'harmonized'] = 'VIIRS',
+                 limit: int = Query(10000, ge=1, le=200000), con=Depends(get_db)):
+    """Fire detections of one region and month: id, latitude, longitude, frp_mw, observed_at,
+    sensor, is_demo. MODIS / VIIRS are raw detections; harmonized = one point per matched MODIS
+    detection with the harmonized FRP of the newest model run. X-Total-Count = rows before limit."""
+    bbox = region_bbox(region)
+    start, end = month_range(month)
+    if sensor in ('MODIS', 'VIIRS'):
+        where, params = _where_clause(bbox, start, end, sensor)
+        base = f'''SELECT observation_id AS id, latitude, longitude, frp_mw,
+                          acq_datetime_utc AS observed_at, sensor_family AS sensor
+                   FROM observations {where}'''
+    else:
+        run = latest_run(con)
+        if run is None:
+            response.headers['X-Total-Count'] = '0'
+            return []
+        where, params = _where_clause(bbox, start, end)
+        where = where.replace('longitude', 'o.longitude').replace('latitude', 'o.latitude') \
+                     .replace('acq_datetime_utc', 'o.acq_datetime_utc')
+        base = f'''SELECT p.unit_id AS id, o.latitude, o.longitude, p.predicted_value AS frp_mw,
+                          o.acq_datetime_utc AS observed_at, 'harmonized' AS sensor
+                   FROM model_predictions p
+                   JOIN (SELECT DISTINCT match_group_id, modis_observation_id, region
+                         FROM matched_observations) mt ON mt.match_group_id = p.unit_id
+                   JOIN observations o ON o.observation_id = mt.modis_observation_id
+                   {where} {'AND' if where else 'WHERE'} p.model_run_id = ? AND mt.region = ?'''
+        params = params + [run, region]
+    total = con.execute(f'SELECT COUNT(*) FROM ({base})', params).fetchall()[0][0]
+    response.headers['X-Total-Count'] = str(total)
+    out = rows(con, f'{base} ORDER BY observed_at, id LIMIT ?', params + [limit])
+    for r in out:
+        r['is_demo'] = is_demo()
+        r['observed_at'] = pd.Timestamp(r['observed_at']).isoformat()
+    return out
 
 
 if __name__ == '__main__':
