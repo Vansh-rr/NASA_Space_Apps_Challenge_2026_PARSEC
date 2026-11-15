@@ -102,3 +102,22 @@ def test_activity_matrix_harmonized(harmonized_client):
 
 def test_activity_bad_dates(client):
     assert client.get('/activity', params={'start': '2023-7-1'}).status_code == 422
+
+
+# B5 comparison
+
+def test_comparison_per_sensor(harmonized_client):
+    body = harmonized_client.get('/comparison', params={'month': '2023-07', 'sample': 20}).json()
+    by = {s['sensor']: s for s in body['sensors']}
+    assert set(by) == {'MODIS', 'VIIRS', 'harmonized'}
+    assert (by['MODIS']['detections'], by['VIIRS']['detections'], by['harmonized']['detections']) == (101, 305, 100)
+    assert by['VIIRS']['active_days'] == 5 and by['MODIS']['active_days'] == 6     # Terra on 6 July
+    assert sum(d['detections'] for d in by['VIIRS']['daily']) == 305
+    assert len(by['MODIS']['sample']) == 20
+    again = harmonized_client.get('/comparison', params={'month': '2023-07', 'sample': 20}).json()
+    assert again == body                                           # same sample every time
+
+
+def test_comparison_without_model_run(client):
+    by = {s['sensor']: s for s in client.get('/comparison').json()['sensors']}
+    assert by['harmonized']['detections'] == 0 and 'note' in by['harmonized']

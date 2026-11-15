@@ -13,7 +13,7 @@ from phase1_queries import _where_clause
 from phase2.phase2_config import load_config
 
 # backend for the web app (phase 3): B1 app, CORS, read-only database, /health, /regions
-#                                    B2 /observations, B3 /activity
+#                                    B2 /observations, B3 /activity, B5 /comparison
 # run:   uvicorn phase3.api:app --reload        then open http://localhost:8000/docs
 # env:   PARSEC_DB_PATH        other database file (default data/fires.duckdb)
 #        PARSEC_DEMO=1         use the demo database instead
@@ -106,6 +106,39 @@ def latest_run(con) -> str | None:
     return got[0][0] if got else None
 
 
+def points_sql(con, region: str, start: str | None, end: str | None, sensor: str):
+    """SQL + params selecting id, latitude, longitude, frp_mw, observed_at, sensor for one sensor.
+    harmonized = one point per matched MODIS detection with the newest model run's FRP.
+    Returns None when harmonized is asked but no model run exists yet."""
+    bbox = region_bbox(region)
+    if sensor in ('MODIS', 'VIIRS'):
+        where, params = _where_clause(bbox, start, end, sensor)
+        return f'''SELECT observation_id AS id, latitude, longitude, frp_mw,
+                           acq_datetime_utc AS observed_at, sensor_family AS sensor
+                    FROM observations {where}''', params
+    run = latest_run(con)
+    if run is None:
+        return None
+    where, params = _where_clause(bbox, start, end)
+    where = where.replace('longitude', 'o.longitude').replace('latitude', 'o.latitude') \
+                 .replace('acq_datetime_utc', 'o.acq_datetime_utc')
+    return f'''SELECT p.unit_id AS id, o.latitude, o.longitude, p.predicted_value AS frp_mw,
+                       o.acq_datetime_utc AS observed_at, 'harmonized' AS sensor
+                FROM model_predictions p
+                JOIN (SELECT DISTINCT match_group_id, modis_observation_id, region
+                      FROM matched_observations) mt ON mt.match_group_id = p.unit_id
+                JOIN observations o ON o.observation_id = mt.modis_observation_id
+                {where} {'AND' if where else 'WHERE'} p.model_run_id = ? AND mt.region = ?''', \
+           params + [run, region]
+
+
+def as_points(out: list[dict]) -> list[dict]:
+    for r in out:
+        r['is_demo'] = is_demo()
+        r['observed_at'] = pd.Timestamp(r['observed_at']).isoformat()
+    return out
+
+
 # B2: fire detections for the map
 
 @app.get('/observations')
@@ -115,36 +148,14 @@ def observations(response: Response, region: str = 'british_columbia', month: st
     """Fire detections of one region and month: id, latitude, longitude, frp_mw, observed_at,
     sensor, is_demo. MODIS / VIIRS are raw detections; harmonized = one point per matched MODIS
     detection with the harmonized FRP of the newest model run. X-Total-Count = rows before limit."""
-    bbox = region_bbox(region)
-    start, end = month_range(month)
-    if sensor in ('MODIS', 'VIIRS'):
-        where, params = _where_clause(bbox, start, end, sensor)
-        base = f'''SELECT observation_id AS id, latitude, longitude, frp_mw,
-                          acq_datetime_utc AS observed_at, sensor_family AS sensor
-                   FROM observations {where}'''
-    else:
-        run = latest_run(con)
-        if run is None:
-            response.headers['X-Total-Count'] = '0'
-            return []
-        where, params = _where_clause(bbox, start, end)
-        where = where.replace('longitude', 'o.longitude').replace('latitude', 'o.latitude') \
-                     .replace('acq_datetime_utc', 'o.acq_datetime_utc')
-        base = f'''SELECT p.unit_id AS id, o.latitude, o.longitude, p.predicted_value AS frp_mw,
-                          o.acq_datetime_utc AS observed_at, 'harmonized' AS sensor
-                   FROM model_predictions p
-                   JOIN (SELECT DISTINCT match_group_id, modis_observation_id, region
-                         FROM matched_observations) mt ON mt.match_group_id = p.unit_id
-                   JOIN observations o ON o.observation_id = mt.modis_observation_id
-                   {where} {'AND' if where else 'WHERE'} p.model_run_id = ? AND mt.region = ?'''
-        params = params + [run, region]
+    q = points_sql(con, region, *month_range(month), sensor)
+    if q is None:
+        response.headers['X-Total-Count'] = '0'
+        return []
+    base, params = q
     total = con.execute(f'SELECT COUNT(*) FROM ({base})', params).fetchall()[0][0]
     response.headers['X-Total-Count'] = str(total)
-    out = rows(con, f'{base} ORDER BY observed_at, id LIMIT ?', params + [limit])
-    for r in out:
-        r['is_demo'] = is_demo()
-        r['observed_at'] = pd.Timestamp(r['observed_at']).isoformat()
-    return out
+    return as_points(rows(con, f'{base} ORDER BY observed_at, id LIMIT ?', params + [limit]))
 
 
 # B3: fire activity calendar (year x month)
@@ -188,6 +199,36 @@ def activity_matrix(region: str = 'british_columbia',
         r['sensor'] = sensor
         r['year'], r['month'], r['detections'] = int(r['year']), int(r['month']), int(r['detections'])
     return out
+
+
+# B5: MODIS vs VIIRS vs harmonized for one month
+
+@app.get('/comparison')
+def comparison(region: str = 'british_columbia', month: str = MONTH,
+               sample: int = Query(200, ge=0, le=5000), con=Depends(get_db)):
+    """Per sensor (MODIS, VIIRS, harmonized): detection count, mean FRP, active days,
+    daily detection counts / FRP, and a fixed random sample of detection points for the map."""
+    start, end = month_range(month)
+    out = []
+    for sensor in ('MODIS', 'VIIRS', 'harmonized'):
+        q = points_sql(con, region, start, end, sensor)
+        if q is None:
+            out.append({'sensor': sensor, 'detections': 0, 'mean_frp_mw': None, 'active_days': 0,
+                        'daily': [], 'sample': [], 'note': 'no harmonization run yet'})
+            continue
+        base, params = q
+        n, mean_frp, days = con.execute(
+            f'SELECT COUNT(*), AVG(frp_mw), COUNT(DISTINCT CAST(observed_at AS DATE)) FROM ({base})',
+            params).fetchall()[0]
+        daily = rows(con, f'''SELECT CAST(observed_at AS DATE) AS date, COUNT(*) AS detections,
+                                     SUM(frp_mw) AS sum_frp_mw
+                              FROM ({base}) GROUP BY 1 ORDER BY 1''', params)
+        for d in daily:
+            d['date'], d['detections'] = str(d['date']), int(d['detections'])
+        points = as_points(rows(con, f'SELECT * FROM ({base}) ORDER BY hash(id) LIMIT ?', params + [sample]))
+        out.append({'sensor': sensor, 'detections': int(n), 'mean_frp_mw': mean_frp,
+                    'active_days': int(days), 'daily': daily, 'sample': points})
+    return {'region': region, 'month': month, 'sensors': out}
 
 
 if __name__ == '__main__':
