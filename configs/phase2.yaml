@@ -78,7 +78,7 @@ model:
 splits:
   names: [train, validation, test]
   fractions: [0.7, 0.15, 0.15]     # share of match groups per split
-  methods: [event, time, region, random]
+  methods: [event, time, backcast, region, random]
   default_method: event
   block_deg: 1.0                   # 'region' method: size of the space blocks (degrees)
   seed: 42

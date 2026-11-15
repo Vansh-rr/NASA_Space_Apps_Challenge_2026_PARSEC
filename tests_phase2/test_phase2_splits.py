@@ -27,7 +27,7 @@ def _units(n_events=40, per_event=5):
     return pd.DataFrame(rows)
 
 
-@pytest.mark.parametrize('method', ['event', 'time', 'region'])
+@pytest.mark.parametrize('method', ['event', 'time', 'backcast', 'region'])
 def test_no_fire_in_two_splits(method):
     units = _units()
     s = split_units(units, method, load_config())
@@ -55,12 +55,45 @@ def test_time_split_puts_older_fires_in_train():
     assert starts.max()['train'] <= starts.min()['test']
 
 
+def test_backcast_puts_oldest_fires_in_test():
+    units = _units()
+    s = split_units(units, 'backcast', load_config()).merge(units, on='unit_id')
+    starts = s.groupby(['split', 'event_id'])['time'].min().groupby('split')
+    assert starts.max()['test'] <= starts.min()['validation']
+    assert starts.max()['validation'] <= starts.min()['train']
+
+
+def test_backcast_ignores_seed_and_row_order():
+    units = _units()
+    cfg = load_config()
+    a = split_units(units, 'backcast', cfg).set_index('unit_id')['split'].sort_index()
+    b = split_units(units.sample(frac=1, random_state=3), 'backcast', cfg).set_index('unit_id')['split'].sort_index()
+    other = load_config(splits={**cfg.splits.model_dump(), 'seed': 7})
+    c = split_units(units, 'backcast', other).set_index('unit_id')['split'].sort_index()
+    assert a.equals(b) and a.equals(c)
+
+
+def test_backcast_is_a_configured_method():
+    assert 'backcast' in load_config().splits.methods
+
+
+
 def test_unknown_method_and_bad_fractions():
     with pytest.raises(ValueError, match='unknown split method'):
         split_units(_units(), 'nope', load_config())
     cfg = load_config()
     with pytest.raises(pydantic.ValidationError, match='add up to 1'):
         load_config(splits={**cfg.splits.model_dump(), 'fractions': [0.5, 0.2, 0.2]})
+
+
+def test_make_splits_requires_events(phase1_db, cfg):
+    obs = extract_overlap(cfg=cfg, db_path=phase1_db, start='2023-07-01')
+    store(run_matching(obs, cfg).matched, 'matched_observations', db_path=phase1_db)
+    with pytest.raises(
+        RuntimeError,
+        match=r'no fire events found: run the events step \(python -m phase2\.phase2_run --only events\) before splitting',
+    ):
+        make_splits('event', db_path=phase1_db, cfg=cfg)
 
 
 def test_model_input_end_to_end(phase1_db, cfg):

@@ -10,10 +10,11 @@ SPLIT_COLS = columns_of('dataset_splits')
 
 # train / validation / test splits that never put the same fire in two splits.
 # units are match groups (task 2.6); they are split in whole groups:
-#   event   whole fire events (task 2.7), in random order        <- default
-#   time    whole fire events in time order (oldest -> train, newest -> test)
-#   region  whole space blocks of block_deg x block_deg degrees, in random order
-#   random  single match groups, in random order (leaks: only for comparison)
+#   event     whole fire events (task 2.7), in random order        <- default
+#   time      whole fire events in time order (oldest -> train, newest -> test)
+#   backcast  whole fire events in reverse time order (newest -> train, oldest -> test)
+#   region    whole space blocks of block_deg x block_deg degrees, in random order
+#   random    single match groups, in random order (leaks: only for comparison)
 
 
 def split_version(cfg: Phase2Config, method: str) -> str:
@@ -41,7 +42,7 @@ def split_units(units: pd.DataFrame, method: str, cfg: Phase2Config | None = Non
     rng = np.random.default_rng(cfg.splits.seed)
     u = units.copy()
 
-    if method in ('event', 'time'):
+    if method in ('event', 'time', 'backcast'):
         u['group_id'] = u['event_id'].fillna(u['unit_id'])
     elif method == 'region':
         # a fire event goes to the block of its centre, so it is never cut in two
@@ -56,6 +57,8 @@ def split_units(units: pd.DataFrame, method: str, cfg: Phase2Config | None = Non
     sizes = u.groupby('group_id').size()
     if method == 'time':
         order = u.groupby('group_id')['time'].min().sort_values(kind='stable').index
+    elif method == 'backcast':
+        order = u.groupby('group_id')['time'].min().sort_values(ascending=False, kind='stable').index
     else:
         groups = np.sort(sizes.index.to_numpy())
         order = pd.Index(groups[rng.permutation(len(groups))])
@@ -93,6 +96,10 @@ def make_splits(method: str | None = None, db_path=None, demo=False,
     units = match_group_units(db_path, demo, cfg)
     if units.empty:
         raise RuntimeError('no match groups found: run phase2_matching.py and phase2_fire_events.py first')
+    if method != 'random' and units['event_id'].isna().all():
+        raise RuntimeError(
+            'no fire events found: run the events step (python -m phase2.phase2_run --only events) before splitting'
+        )
     s = split_units(units, method, cfg)
     s['unit_type'] = 'match_group'
     s['split_method'] = method
@@ -112,7 +119,7 @@ def check_no_leak(splits: pd.DataFrame) -> bool:
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Train/validation/test splits (Task 2.12)')
-    parser.add_argument('--method', default=None, help='event (default), time, region or random')
+    parser.add_argument('--method', default=None, help='event (default), time, backcast, region or random')
     parser.add_argument('--demo', action='store_true')
     args = parser.parse_args()
 
