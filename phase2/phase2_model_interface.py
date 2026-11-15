@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 import json
+import hashlib
 
 import pandas as pd
 
@@ -67,6 +68,15 @@ def register_model(model_class: type[HarmonizationModel]) -> type[HarmonizationM
 register_model(IdentityModel)
 
 
+def input_version(data: pd.DataFrame) -> str:
+    """Identify exact inputs, including values and splits, rather than config alone."""
+    ordered = data.sort_values('unit_id').reindex(sorted(data.columns), axis=1)
+    digest = hashlib.sha256(ordered.to_json(orient='split', index=False,
+                                          date_format='iso', double_precision=15).encode()).hexdigest()
+    return (f'{data["split_version"].iloc[0]}|features:{data["feature_source"].iloc[0]}'
+            f'|input:{digest}')
+
+
 def get_model(name: str, **settings) -> HarmonizationModel:
     try:
         return MODELS[name](**settings)
@@ -93,7 +103,7 @@ def run_model(model: HarmonizationModel | str | None = None, method: str | None 
                                      'viirs_frp_max_mw', 'log_frp_viirs_sum'], errors='ignore')
     output = check_model_output(model.predict(answer_free), data)
 
-    dataset_version = f'{data["split_version"].iloc[0]}|features:{data["feature_source"].iloc[0]}'
+    dataset_version = input_version(data)
     params = model.parameters()
     run_id = model_run_id(model.name, model.version, dataset_version, params)
     predictions = to_prediction_rows(output, data, run_id)

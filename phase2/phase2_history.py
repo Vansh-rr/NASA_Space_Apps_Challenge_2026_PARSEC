@@ -8,14 +8,10 @@ from phase2.phase2_database import connect, store
 from phase2.phase2_schema import columns_of
 from phase2.phase2_source_flags import flag_observations, load_registry
 
-# historical time series (task 2.16)
-# raw observed activity per period, satellite and sensor family, kept apart from
-# harmonized (model) estimates. a period without detections is only 0 when the satellite
-# was flying and not in a known outage; otherwise n_detections stays empty (NULL):
-#   observed            detections in the period
-#   no_detections       satellite available, nothing detected -> real 0
-#   outage              whole period inside a known outage (task 2.9) -> unknown
-#   sensor_unavailable  satellite not launched yet / ended -> unknown
+# Historical hotspot totals do not prove complete observation coverage.
+# observed / no_detections require explicit verified regional coverage for all
+# available satellites and dates in the period. Otherwise use partial_observed
+# or unknown and exclude that period from seasonal baselines.
 
 WINDOWS = ['day', '8day', 'month', 'year']
 HIST_COLS = columns_of('historical_observations')
@@ -90,10 +86,24 @@ def _available(cal: pd.DataFrame, satellites, cfg: Phase2Config) -> np.ndarray:
 
 
 def build_history(obs: pd.DataFrame, window: str, region: str, start, end,
-                  cfg: Phase2Config | None = None, exclude_flagged: bool = False) -> pd.DataFrame:
+                  cfg: Phase2Config | None = None, exclude_flagged: bool = False,
+                  verified_coverage: pd.DataFrame | None = None) -> pd.DataFrame:
     """historical_observations rows: one per period x satellite, plus satellite='all'
     per sensor family (Terra + Aqua = all MODIS)."""
     cfg = cfg or load_config()
+    # Explicit attestation of complete usable coverage of the study region per
+    # satellite/day. Satellite availability and hotspot presence are insufficient.
+    verified = set()
+    if verified_coverage is not None:
+        needed = {'satellite', 'date', 'support_evidence'}
+        if not needed <= set(verified_coverage.columns):
+            raise ValueError('verified_coverage needs satellite, date, support_evidence')
+        if verified_coverage[list(needed)].isna().any().any() or \
+                verified_coverage['support_evidence'].astype(str).str.strip().eq('').any():
+            raise ValueError('verified coverage requires nonmissing support evidence')
+        if not set(verified_coverage['satellite']) <= set(cfg.sensor_availability):
+            raise ValueError('unknown satellite in verified coverage')
+        verified = set(zip(verified_coverage['satellite'], pd.to_datetime(verified_coverage['date']).dt.date))
     registry = load_registry()
     cal = period_calendar(start, end, window)
     obs = obs.copy()
@@ -109,7 +119,7 @@ def build_history(obs: pd.DataFrame, window: str, region: str, start, end,
             part = obs[obs['satellite'].isin(sats)]
             stats = part.groupby('period_start').agg(
                 n_detections=('observation_id', 'size'), n_flagged=('is_flagged', 'sum'),
-                n_days_with_detections=('day', 'nunique'), frp_sum_mw=('frp_mw', 'sum'),
+                n_days_with_detections=('day', 'nunique'), frp_sum_mw=('frp_mw', lambda x: x.sum(min_count=1)),
                 frp_mean_mw=('frp_mw', 'mean'), frp_p90_mw=('frp_mw', lambda x: x.quantile(0.9)),
                 frp_max_mw=('frp_mw', 'max'))
             h = cal.merge(stats, left_on='period_start', right_index=True, how='left')
@@ -117,9 +127,18 @@ def build_history(obs: pd.DataFrame, window: str, region: str, start, end,
             h['quality_flags'] = flags
             available = _available(cal, sats, cfg)
             has = h['n_detections'].notna().to_numpy()
+            complete = np.array([all(
+                (satellite, day.date()) in verified
+                for day in pd.date_range(p.first_day, p.last_day)
+                for satellite in sats
+                if cfg.sensor_availability[satellite].start <= day.date()
+                and (cfg.sensor_availability[satellite].end is None
+                     or day.date() <= cfg.sensor_availability[satellite].end)
+            ) for p in cal.itertuples(index=False)], dtype=bool)
             h['coverage_state'] = np.select(
-                [has, ~available, np.array(outage)],
-                ['observed', 'sensor_unavailable', 'outage'], 'no_detections')
+                [~available, np.array(outage), has & complete, has, complete],
+                ['sensor_unavailable', 'outage', 'observed', 'partial_observed', 'no_detections'],
+                'unknown')
             zero = h['coverage_state'] == 'no_detections'           # real zeros only
             h.loc[zero, ['n_detections', 'n_flagged', 'n_days_with_detections']] = 0
             h['sensor_family'], h['satellite'] = family, sat
@@ -163,7 +182,8 @@ def build_harmonized_history(run_id: str, window: str, db_path=None, demo=False,
 
 
 def make_history(region=None, start=None, end=None, windows=None, run_id=None,
-                 db_path=None, demo=False, cfg: Phase2Config | None = None, save=True) -> dict:
+                 db_path=None, demo=False, cfg: Phase2Config | None = None, save=True,
+                 verified_coverage: pd.DataFrame | None = None) -> dict:
     """Build (and save) the history for every window. With run_id also the harmonized one.
     Returns {window: historical_observations rows}."""
     cfg = cfg or load_config(demo_mode=demo)
@@ -175,7 +195,7 @@ def make_history(region=None, start=None, end=None, windows=None, run_id=None,
 
     out = {}
     for w in windows or WINDOWS:
-        out[w] = build_history(obs, w, region, start, end, cfg)
+        out[w] = build_history(obs, w, region, start, end, cfg, verified_coverage=verified_coverage)
         if save:
             store(out[w], 'historical_observations', db_path=db_path, demo=demo)
             out[w].to_parquet(folder / f'observations_{w}.parquet', index=False)

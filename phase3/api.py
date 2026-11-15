@@ -1,10 +1,13 @@
 from __future__ import annotations
 import os
+import calendar
+from datetime import date
 from pathlib import Path
 from typing import Literal
 
 import duckdb
 import pandas as pd
+import numpy as np
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -47,28 +50,40 @@ def get_db():
     path = db_path()
     if not path.exists():
         raise HTTPException(503, f'database not found: {path.name} (run phase1_run.py and phase2_run.py first)')
-    con = duckdb.connect(str(path), read_only=True)
+    con = None
     try:
+        con = duckdb.connect(str(path), read_only=True)
         con.execute("SET TimeZone = 'UTC'").fetchall()
+        con.execute('SELECT observation_id FROM observations LIMIT 0').fetchall()
         yield con
+    except duckdb.Error as exc:
+        raise HTTPException(503, 'database unavailable or incompatible; build the required pipeline tables first') from exc
     finally:
-        con.close()
+        if con is not None:
+            con.close()
 
 
 def rows(con, sql: str, params=None) -> list[dict]:
     """Run a query and return a list of dicts (JSON friendly) for the endpoints."""
     df = con.execute(sql, params or []).df()
+    df = df.replace([np.inf, -np.inf], np.nan)
     return df.astype(object).where(df.notna(), None).to_dict(orient='records')
 
 
 @app.get('/health')
-def health():
+def health(response: Response):
     """Is the API up, and can it see the database?"""
     path = db_path()
-    out = {'status': 'ok', 'database': path.name, 'database_found': path.exists(), 'demo': is_demo()}
-    if path.exists():
-        with duckdb.connect(str(path), read_only=True) as con:
-            out['observations'] = con.execute('SELECT COUNT(*) FROM observations').fetchall()[0][0]
+    out = {'status': 'unavailable', 'database': path.name, 'database_found': path.exists(), 'demo': is_demo()}
+    try:
+        if path.exists():
+            with duckdb.connect(str(path), read_only=True) as con:
+                out['observations'] = con.execute('SELECT COUNT(*) FROM observations').fetchall()[0][0]
+            out['status'] = 'ok'
+    except duckdb.Error:
+        pass
+    if out['status'] != 'ok':
+        response.status_code = 503
     return out
 
 
@@ -94,14 +109,23 @@ MONTH = Query('2023-07', pattern=r'^\d{4}-(0[1-9]|1[0-2])$', description='YYYY-M
 
 def month_range(month: str) -> tuple[str, str]:
     """'2023-07' -> ('2023-07-01', '2023-07-31')"""
-    first = pd.Period(month, freq='M')
-    return str(first.start_time.date()), str(first.end_time.date())
+    try:
+        year, number = map(int, month.split('-'))
+        return date(year, number, 1).isoformat(), date(year, number, calendar.monthrange(year, number)[1]).isoformat()
+    except (ValueError, OverflowError) as exc:
+        raise HTTPException(422, 'invalid calendar month') from exc
 
 
-def latest_run(con) -> str | None:
+def latest_run(con, region: str) -> str | None:
     """Newest harmonization run (task 2.13); the harmonized view comes from its predictions."""
     try:
-        got = con.execute('SELECT model_run_id FROM model_runs ORDER BY created_at DESC LIMIT 1').fetchall()
+        got = con.execute('''SELECT r.model_run_id FROM model_runs r
+            WHERE r.is_synthetic = ? AND EXISTS (
+                SELECT 1 FROM model_predictions p JOIN matched_observations mt
+                ON mt.match_group_id = p.unit_id
+                WHERE p.model_run_id = r.model_run_id AND mt.region = ? AND mt.dataset_version = ?)
+            ORDER BY r.created_at DESC, r.model_run_id DESC LIMIT 1''',
+            [is_demo(), region, load_config().version('matching')]).fetchall()
     except duckdb.CatalogException:
         return None
     return got[0][0] if got else None
@@ -117,7 +141,7 @@ def points_sql(con, region: str, start: str | None, end: str | None, sensor: str
         return f'''SELECT observation_id AS id, latitude, longitude, frp_mw,
                            acq_datetime_utc AS observed_at, sensor_family AS sensor
                     FROM observations {where}''', params
-    run = latest_run(con)
+    run = latest_run(con, region)
     if run is None:
         return None
     where, params = _where_clause(bbox, start, end)
@@ -127,10 +151,10 @@ def points_sql(con, region: str, start: str | None, end: str | None, sensor: str
                        o.acq_datetime_utc AS observed_at, 'harmonized' AS sensor
                 FROM model_predictions p
                 JOIN (SELECT DISTINCT match_group_id, modis_observation_id, region
-                      FROM matched_observations) mt ON mt.match_group_id = p.unit_id
+                      FROM matched_observations WHERE dataset_version = ?) mt ON mt.match_group_id = p.unit_id
                 JOIN observations o ON o.observation_id = mt.modis_observation_id
                 {where} {'AND' if where else 'WHERE'} p.model_run_id = ? AND mt.region = ?''', \
-           params + [run, region]
+           [load_config().version('matching')] + params + [run, region]
 
 
 def as_points(out: list[dict]) -> list[dict]:
@@ -145,7 +169,8 @@ def as_points(out: list[dict]) -> list[dict]:
 @app.get('/observations')
 def observations(response: Response, region: str = 'british_columbia', month: str = MONTH,
                  sensor: Literal['MODIS', 'VIIRS', 'harmonized'] = 'VIIRS',
-                 limit: int = Query(10000, ge=1, le=200000), con=Depends(get_db)):
+                 limit: int = Query(10000, ge=1, le=200000),
+                 offset: int = Query(0, ge=0), con=Depends(get_db)):
     """Fire detections of one region and month: id, latitude, longitude, frp_mw, observed_at,
     sensor, is_demo. MODIS / VIIRS are raw detections; harmonized = one point per matched MODIS
     detection with the harmonized FRP of the newest model run. X-Total-Count = rows before limit."""
@@ -156,7 +181,7 @@ def observations(response: Response, region: str = 'british_columbia', month: st
     base, params = q
     total = con.execute(f'SELECT COUNT(*) FROM ({base})', params).fetchall()[0][0]
     response.headers['X-Total-Count'] = str(total)
-    return as_points(rows(con, f'{base} ORDER BY observed_at, id LIMIT ?', params + [limit]))
+    return as_points(rows(con, f'{base} ORDER BY observed_at, id LIMIT ? OFFSET ?', params + [limit, offset]))
 
 
 # B3: fire activity calendar (year x month)
@@ -166,12 +191,14 @@ DAY = r'^\d{4}-\d{2}-\d{2}$'
 
 @app.get('/activity')
 def activity_matrix(region: str = 'british_columbia',
-                    start: str | None = Query(None, pattern=DAY, description='YYYY-MM-DD (default: all)'),
-                    end: str | None = Query(None, pattern=DAY, description='YYYY-MM-DD, included'),
+                    start: date | None = Query(None, description='YYYY-MM-DD (default: all)'),
+                    end: date | None = Query(None, description='YYYY-MM-DD, included'),
                     sensor: Literal['MODIS', 'VIIRS', 'harmonized'] = 'VIIRS', con=Depends(get_db)):
     """Monthly detection count, summed and mean FRP per year/month cell. Months without a row
     have no data downloaded or no detections (not automatically zero fires).
     harmonized = matched MODIS detections with the harmonized FRP of the newest model run."""
+    if start is not None and end is not None and start > end:
+        raise HTTPException(422, 'start must not exceed end')
     bbox = region_bbox(region)
     if sensor in ('MODIS', 'VIIRS'):
         where, params = _where_clause(bbox, start, end, sensor)
@@ -179,7 +206,7 @@ def activity_matrix(region: str = 'british_columbia',
                          COUNT(*) AS detections, SUM(frp_mw) AS sum_frp_mw, AVG(frp_mw) AS mean_frp_mw
                   FROM observations {where} GROUP BY 1, 2 ORDER BY 1, 2'''
     else:
-        run = latest_run(con)
+        run = latest_run(con, region)
         if run is None:
             return []
         where, params = _where_clause(bbox, start, end)
@@ -190,14 +217,15 @@ def activity_matrix(region: str = 'british_columbia',
                          AVG(p.predicted_value) AS mean_frp_mw
                   FROM model_predictions p
                   JOIN (SELECT DISTINCT match_group_id, modis_observation_id, region
-                        FROM matched_observations) mt ON mt.match_group_id = p.unit_id
+                        FROM matched_observations WHERE dataset_version = ?) mt ON mt.match_group_id = p.unit_id
                   JOIN observations o ON o.observation_id = mt.modis_observation_id
                   {where} {'AND' if where else 'WHERE'} p.model_run_id = ? AND mt.region = ?
                   GROUP BY 1, 2 ORDER BY 1, 2'''
-        params = params + [run, region]
+        params = [load_config().version('matching')] + params + [run, region]
     out = rows(con, sql, params)
     for r in out:
         r['sensor'] = sensor
+        r['is_demo'] = is_demo()
         r['year'], r['month'], r['detections'] = int(r['year']), int(r['month']), int(r['detections'])
     return out
 
@@ -229,7 +257,8 @@ def comparison(region: str = 'british_columbia', month: str = MONTH,
         points = as_points(rows(con, f'SELECT * FROM ({base}) ORDER BY hash(id) LIMIT ?', params + [sample]))
         out.append({'sensor': sensor, 'detections': int(n), 'mean_frp_mw': mean_frp,
                     'active_days': int(days), 'daily': daily, 'sample': points})
-    return {'region': region, 'month': month, 'sensors': out}
+    return {'region': region, 'month': month, 'sensors': out, 'is_demo': is_demo(),
+            'coverage_note': 'Detection records only. Missing dates do not establish zero fires or complete observation coverage.'}
 
 
 # Bayesian model preview
@@ -302,18 +331,18 @@ def history(region: str = 'british_columbia', month: int = Query(7, ge=1, le=12,
     harmonized has no anomaly yet (anomalies are computed on raw sensors only)."""
     region_bbox(region)
     if sensor == 'harmonized':
-        run = latest_run(con)
+        run = latest_run(con, region)
         where, params = "view = 'harmonized_estimate' AND model_run_id = ?", [run]
     else:
         where, params = "view = 'raw_observed' AND satellite = 'all' AND sensor_family = ?", [sensor]
     try:
         years = rows(con, f'''SELECT year, coverage_state, n_detections, frp_sum_mw, n_fire_events_started
-                              FROM fire_calendar WHERE region = ? AND month = ? AND {where}
-                              ORDER BY year''', [region, month] + params)
+                              FROM fire_calendar WHERE region = ? AND month = ? AND dataset_version = ? AND {where}
+                              ORDER BY year''', [region, month, load_config().version('analytics')] + params)
         anomalies = [] if sensor == 'harmonized' else rows(con, '''
             SELECT year, metric, z_score, percentile, anomaly_class, baseline_median, n_baseline_years
             FROM fire_anomalies WHERE region = ? AND month = ? AND sensor_family = ? AND satellite = 'all'
-            ''', [region, month, sensor])
+            AND dataset_version = ?''', [region, month, sensor, load_config().version('analytics')])
     except duckdb.CatalogException:
         raise HTTPException(503, 'no history yet: run phase2_run --only history --only analytics')
     for y in years:

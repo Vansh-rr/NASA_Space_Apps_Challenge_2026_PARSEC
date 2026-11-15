@@ -33,48 +33,19 @@ interface FireMapProps {
 const SOURCE_ID = 'fires';
 const colorExpression = ['interpolate', ['linear'], ['get', 'logFrp'], ...FRP_COLOR_STOPS.flat()];
 
-function kmToDegLat(km: number): number {
-  return km / 111.32;
-}
-
-function kmToDegLon(km: number, latitude: number): number {
-  return km / (111.32 * Math.cos((latitude * Math.PI) / 180));
-}
-
+/** Point markers represent detection centres, not measured fire footprints. */
 function toGeoJson(observations: FireObservation[]): FeatureCollection {
   return {
     type: 'FeatureCollection',
-    features: observations.map((fire) => {
-      const displayScale = 6;
-      const halfScanDeg = kmToDegLon(((fire.scanKm ?? 1.0) * displayScale) / 2, fire.latitude);
-      const halfTrackDeg = kmToDegLat(((fire.trackKm ?? 1.0) * displayScale) / 2);
-
-      const lon = fire.longitude;
-      const lat = fire.latitude;
-      return {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [[
-            [lon - halfScanDeg, lat - halfTrackDeg],
-            [lon + halfScanDeg, lat - halfTrackDeg],
-            [lon + halfScanDeg, lat + halfTrackDeg],
-            [lon - halfScanDeg, lat + halfTrackDeg],
-            [lon - halfScanDeg, lat - halfTrackDeg],
-          ]],
-        },
-        properties: {
-          id: fire.id,
-          frpMw: fire.frpMw,
-          logFrp: logFrp(fire.frpMw),
-                               observedAt: fire.observedAt,
-                               sensor: fire.sensor,
-                               isDemo: fire.isDemo,
-                               latitude: lat,
-                               longitude: lon,
-        },
-      };
-    }),
+    features: observations.map((fire) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [fire.longitude, fire.latitude] },
+      properties: {
+        id: fire.id, frpMw: fire.frpMw, logFrp: logFrp(fire.frpMw),
+        observedAt: fire.observedAt, sensor: fire.sensor, isDemo: fire.isDemo,
+        latitude: fire.latitude, longitude: fire.longitude,
+      },
+    })),
   };
 }
 
@@ -137,28 +108,21 @@ export function FireMap({
       map.addSource(SOURCE_ID, { type: 'geojson', data: toGeoJson(observationsRef.current) });
       map.addLayer({
         id: 'fires-fill',
-        type: 'fill',
+        type: 'circle',
         source: SOURCE_ID,
         paint: {
-          'fill-color': colorExpression as never,
-          'fill-opacity': 0.85,
-        },
-      });
-      map.addLayer({
-        id: 'fires-outline',
-        type: 'line',
-        source: SOURCE_ID,
-        paint: {
-          'line-color': '#ffe9b0',
-          'line-width': 0.4,
-          'line-opacity': 0.5,
+          'circle-color': colorExpression as never,
+          'circle-radius': compact ? 3 : 4,
+          'circle-opacity': 0.85,
+          'circle-stroke-color': '#ffe9b0',
+          'circle-stroke-width': 0.5,
         },
       });
     });
 
     map.on('click', 'fires-fill', (event) => {
       const feature = event.features?.[0];
-      if (!feature || feature.geometry.type !== 'Polygon') return;
+      if (!feature || feature.geometry.type !== 'Point') return;
       const p = feature.properties as Record<string, unknown>;
       popup
       .setLngLat([

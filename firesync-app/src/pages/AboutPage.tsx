@@ -9,7 +9,7 @@ const HERO = {
 const ABOUT_SECTIONS = [
     {
         heading: 'What is FireSync?',
-        body: 'FireSync is a research platform that brings together active fire detections from NASA\'s MODIS and VIIRS satellite sensors, which have tracked burning activity across the planet for the years 2003, 2010, 2017, 2018, 2021, 2023. Because the two sensors use different instruments, orbits and pixel sizes, their records cannot be compared directly. FireSync applies a Bayesian harmonization model to reconcile them into a single consistent dataset that fire managers, scientists and land managers can use to examine historical patterns, identify unusual conditions and anticipate critical fire periods.',
+        body: 'FireSync is a research prototype for comparing MODIS and VIIRS active-fire detections. Explore and Compare display observations loaded into the local database. The default harmonized record is an identity baseline that retains matched MODIS FRP. A separate Bayesian preview demonstrates an exploratory fire-mask reconstruction. Its calibration is illustrative and its physical accuracy is unvalidated.',
     },
 {
     heading: 'Why it matters',
@@ -40,7 +40,7 @@ const DATA_SOURCES = [
     satellites: 'MODIS + VIIRS overlap period',
     period: 'Present',
     description:
-    'As MODIS and VIIRS may reveal fire activity differently, their observations are not directly comparable. Wetherefore need a method that uses the observations without assuming that any individual measurement reveals the complete fire activity. The harmonized record is produced by spatiotemporally matching MODIS and VIIRS detections, then applying a Bayesian model to place both sensors on a common radiative power scale. ',
+    'As MODIS and VIIRS may reveal fire activity differently, their observations are not directly comparable. Wetherefore need a method that uses the observations without assuming that any individual measurement reveals the complete fire activity. The engineering record groups nearby detections and currently defaults to unchanged MODIS FRP. The separate Model Preview shows probabilistic grid reconstruction from fire masks and does not establish a common physical FRP scale. ',
 },
 ];
 
@@ -63,12 +63,12 @@ const HOW_IT_WORKS = [
 {
     step: '04',
     title: 'Bayesian harmonization',
-    body: 'A hierarchical Bayesian model in log-FRP space estimates the latent fire power from matched pairs. The MODIS multiplicative bias (b_M) and per-sensor noise variances are inferred by MAP estimation. The posterior median on the VIIRS scale is the harmonized FRP.',
+    body: 'The independent C engine estimates a discrete latent fire field using exact inference on small problems or a particle smoother. The included mask preview uses illustrative parameters and exposes model-estimated fire probabilities. It does not supply a validated physical FRP retrieval or a forecasting accuracy claim.',
 },
 {
     step: '05',
     title: 'Analytics & delivery',
-    body: 'Monthly detection counts, FRP time series and anomaly z-scores are served through a REST API backed by DuckDB. The FireSync web application displays the harmonized record alongside the raw sensors so users can verify consistency.',
+    body: 'The REST API serves downloaded detection counts and reported FRP totals from DuckDB. Missing coverage stays unknown. Seasonal anomalies require independently verified complete regional observation coverage and enough baseline years. The FireSync web application displays the harmonized record alongside the raw sensors so users can verify consistency.',
 },
 ];
 

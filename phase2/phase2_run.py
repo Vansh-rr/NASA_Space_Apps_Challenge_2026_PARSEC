@@ -36,9 +36,14 @@ def step_overlap(ctx):
 
 
 def _overlap(ctx):
-    from phase2.phase2_overlap import load_overlap
+    from phase2.phase2_overlap import extract_overlap
     if 'overlap' not in ctx:
-        ctx['overlap'] = load_overlap(ctx['region'], cfg=ctx['cfg'])
+        # A shared Parquet path may belong to a different DB, date range or
+        # configuration. Resume from this run's explicit source instead.
+        ctx['overlap'] = extract_overlap(cfg=ctx['cfg'], db_path=ctx['db'],
+                                         region=ctx['region'], start=ctx['start'], end=ctx['end'])
+        if ctx['overlap'].empty:
+            raise RuntimeError('no overlap detections in the selected database/date range')
     return ctx['overlap']
 
 

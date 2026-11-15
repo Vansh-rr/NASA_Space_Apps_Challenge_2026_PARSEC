@@ -9,10 +9,10 @@ const METHODOLOGY =
   'KPIs use one record: Harmonized if selected, else VIIRS, else MODIS (records are never summed). ' +
   'Total FRP is the sum of reported FRP over all detections in the month; it is not fire energy, because ' +
   'one fire is seen on several overpasses. Anomaly = z-score of this month\'s detection count against the same calendar ' +
-  'month in the other downloaded years (VIIRS when VIIRS is the KPI record, else MODIS; needs at least 3 other years). ' +
+  'month in the other downloaded years (VIIRS when VIIRS is the KPI record, else MODIS; requires verified complete regional coverage and at least 3 other complete years). ' +
   'Fire clusters = fire events that started this month (nearby detections grouped in space and time). ' +
   'Month-to-month change is not connected yet. ' +
-  'The harmonized record is the identity baseline (harmonized FRP equals ' +
+  'The harmonized record defaults to the identity baseline (harmonized FRP equals ' +
   'MODIS FRP); the Bayesian model is shown separately as an exploratory preview on the Model Preview page. Data covers British Columbia for the months loaded into the database, in UTC.';
 
 /** Which record drives the KPI cards. See METHODOLOGY. */
@@ -58,7 +58,9 @@ export function buildAnalytics(filters: AnalyticsFilters, api: ApiComparisonResp
     bySensor.set(s.sensor.toLowerCase() as SensorId, s);
   }
   const rec = bySensor.get(sensor);
-  const sumFrp = (rec?.daily ?? []).reduce((acc, d) => acc + (d.sum_frp_mw ?? 0), 0);
+  const hasData = Boolean(rec && !rec.note && rec.daily.length);
+  const knownFrp = (rec?.daily ?? []).filter((d) => d.sum_frp_mw !== null && d.sum_frp_mw !== undefined);
+  const sumFrp = knownFrp.length ? knownFrp.reduce((acc, d) => acc + d.sum_frp_mw!, 0) : null;
 
   const dailyFrp = fillDailySums(filters.month, rec?.daily ?? []);
   const trend = movingAverage(dailyFrp, 3);
@@ -69,7 +71,7 @@ export function buildAnalytics(filters: AnalyticsFilters, api: ApiComparisonResp
   const daily = datesOfMonth(filters.month).map((date, i) => ({
     date,
     dailyFrpMw: dailyFrp[i],
-    trendFrpMw: trend[i] === null ? null : Math.round(trend[i] as number),
+    trendFrpMw: dailyFrp[i] === null || trend[i] === null ? null : Math.round(trend[i] as number),
     modisDetections: modisCounts[i].count,
     viirsDetections: viirsCounts[i].count,
     harmonizedDetections: harmonizedCounts[i].count,
@@ -83,14 +85,14 @@ export function buildAnalytics(filters: AnalyticsFilters, api: ApiComparisonResp
   return {
     filters,
     metrics: {
-      detections: { value: rec?.detections ?? 0, unit: 'count', change: null, changeKind: 'percent' },
-      totalFrp: { value: Math.round(sumFrp * 10) / 10, unit: 'MW', change: null, changeKind: 'percent' },
+      detections: { value: hasData ? rec!.detections : null, unit: 'count', change: null, changeKind: 'percent' },
+      totalFrp: { value: sumFrp === null ? null : Math.round(sumFrp * 10) / 10, unit: 'MW', change: null, changeKind: 'percent' },
       anomaly: { value: hist.zScore === null ? null : Math.round(hist.zScore * 100) / 100, unit: 'z-score', change: null, changeKind: 'absolute' },
       clusters: { value: hist.clusters, unit: 'count', change: null, changeKind: 'percent' },
     },
     daily,
     observations,
-    isDemo: false,
+    isDemo: Boolean(api.is_demo),
     updatedAt: null,
     methodology: METHODOLOGY,
   };

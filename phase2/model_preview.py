@@ -192,6 +192,24 @@ class PreviewStore:
         for name,expected in manifest['files'].items():require(sha(d/name)==expected,'preview hash mismatch: '+name)
         self.metadata=read(d/'metadata.json');self.rows=read(d/'field.json')['items'];self.geometry=read(d/'cells.geojson');self.validation=read(d/'validation.json')
         require(manifest['model_run_id']==self.metadata['model_run_id'] and len(self.rows)==self.metadata['rows'],'manifest metadata mismatch')
+        report = read(d/'report.json')
+        require(self.metadata['source_kind'] == report['source_kind']
+                and self.metadata['calibration_kind'] == report['calibration_kind'], 'preview provenance mismatch')
+        require(self.metadata['physical_frp_validated'] is False
+                and self.metadata['warning'] is False and report['warning'] is False,
+                'preview cannot claim physical validation or suppress numerical warnings')
+        cells = {f['properties']['cell_id'] for f in self.geometry['features']}
+        require(len(cells) == self.metadata['cells'], 'preview cell count mismatch')
+        seen = set()
+        for row in self.rows:
+            key = (utc(row['time']), row['cell_id'])
+            require(key not in seen and row['cell_id'] in cells, 'unexpected/duplicate preview row')
+            seen.add(key)
+            require(type(row['p_fire']) in (int, float) and math.isfinite(row['p_fire'])
+                    and 0 <= row['p_fire'] <= 1, 'invalid preview probability')
+            require(-90 <= row['latitude'] <= 90 and -180 <= row['longitude'] <= 180,
+                    'invalid preview coordinates')
+        require(len(seen) == self.metadata['cells'] * self.metadata['time_bins'], 'incomplete preview grid')
 
     def _select(self,start,end,bbox):
         start,end=date.fromisoformat(start),date.fromisoformat(end)

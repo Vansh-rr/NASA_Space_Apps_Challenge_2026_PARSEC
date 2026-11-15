@@ -3,7 +3,7 @@ import { ActivityHeatmap } from '../components/activity/ActivityHeatmap';
 import { ActivityLegend } from '../components/activity/ActivityLegend';
 import { FireMap } from '../components/map/FireMap';
 import { SearchPanel } from '../components/search/SearchPanel';
-import { ErrorState, LoadingState } from '../components/shared/States';
+import { DemoBadge, ErrorState, LoadingState } from '../components/shared/States';
 import { REGIONS } from '../data/regions';
 import { useExploreFilters } from '../hooks/useExploreFilters';
 import { useLocationSearch } from '../hooks/useLocationSearch';
@@ -59,6 +59,7 @@ export function ExplorePage() {
       />
 
       <section className={styles.activity} aria-label="Fire activity calendar">
+        {(cells.some((c) => c.isDemo) || observations.some((o) => o.isDemo)) && <DemoBadge />}
         {activity.status === 'error' && <ErrorState message={activity.error ?? ''} onRetry={activity.retry} />}
         {activity.status === 'loading' && <LoadingState label="Loading fire activity…" />}
         {activity.status === 'ready' && <ActivityHeatmap cells={cells} unit={unit} selected={period} onToggle={togglePeriod} />}
@@ -80,8 +81,8 @@ export function ExplorePage() {
             </>
           ) : (
             <>
-              Showing <strong>{monthLabel(shownKey)}</strong>, the record fire season: {formatCount(observations.length)} MODIS
-              detections on the map. Select a month above to see another.
+              Showing <strong>{monthLabel(shownKey)}</strong>, the default sample month: {formatCount(observations.length)} MODIS
+              detections on the map. Missing calendar cells mean unknown coverage. Select a month above to see another.
             </>
           )}
         </p>

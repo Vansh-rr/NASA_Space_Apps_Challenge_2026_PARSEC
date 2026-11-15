@@ -41,6 +41,13 @@ def check_model_output(output: pd.DataFrame, model_input: pd.DataFrame) -> pd.Da
             raise ValueError(f'{col} contains infinite values')
         out[col] = values
 
+    if out['predicted_value'].isna().any():
+        raise ValueError('predicted_value must be finite for every requested unit')
+    if (out[['predicted_value'] + MODEL_OUTPUT_OPTIONAL] < 0).any().any():
+        raise ValueError('FRP predictions and interval bounds must be nonnegative')
+    if (out['predicted_lower'].notna() != out['predicted_upper'].notna()).any():
+        raise ValueError('interval bounds must both be supplied or both be missing')
+
     has_both = out['predicted_lower'].notna() & out['predicted_upper'].notna()
     bad = has_both & ~((out['predicted_lower'] <= out['predicted_value'])
                        & (out['predicted_value'] <= out['predicted_upper']))

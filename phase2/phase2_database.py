@@ -32,7 +32,7 @@ def connect(db_path=None, demo: bool = False, tables=None):
     """Open the DuckDB file and make sure the Phase 2 tables exist (all, or only `tables`)."""
     con = _p1_connect(db_path_for(demo, db_path))
     try:
-        for name in (tables or TABLES):
+        for name in (TABLES if tables is None else tables):
             if name not in TABLES:
                 raise ValueError(f'unknown Phase 2 table {name!r}')
             con.execute(create_table_sql(name)).fetchall()
@@ -44,22 +44,25 @@ def connect(db_path=None, demo: bool = False, tables=None):
 
 
 def store(df: pd.DataFrame, table: str, db_path=None, demo: bool = False) -> int:
-    """Insert rows into a Phase 2 table. Rows already there (same primary key) are skipped,
-    so reruns never create duplicates. Returns the number of new rows."""
+    """Upsert derived rows by primary key so reruns refresh computed values.
+    Raw Phase 1 observations are never changed. Returns the number of new keys.
+    """
     if table not in TABLES:
         raise ValueError(f'unknown Phase 2 table {table!r}')
     cols = columns_of(table)
     missing = [c for c in cols if c not in df.columns]
     if missing:
         raise ValueError(f'{table}: missing columns {missing}')
-    if df.empty:
-        return 0
+    if df.duplicated(subset=list(TABLES[table][1])).any():
+        raise ValueError(f'{table}: duplicate primary keys in one input batch')
     with connect(db_path, demo, tables=[table]) as con:
+        if df.empty:
+            return 0
         before = con.execute(f'SELECT COUNT(*) FROM {table}').fetchall()[0][0]
         con.register('_new_rows', df[cols])
         try:
             con.execute(
-                f'INSERT OR IGNORE INTO {table} ({", ".join(cols)}) '
+                f'INSERT OR REPLACE INTO {table} ({", ".join(cols)}) '
                 f'SELECT {", ".join(cols)} FROM _new_rows'
             ).fetchall()
         finally:
@@ -84,8 +87,10 @@ def load(table: str, db_path=None, demo: bool = False, columns=None,
     for col, value in (where or {}).items():
         if isinstance(value, (list, tuple, set)):
             values = list(value)
-            conditions.append(f'{col} IN ({", ".join("?" for _ in values)})')
+            conditions.append(f'{col} IN ({", ".join("?" for _ in values)})' if values else 'FALSE')
             params.extend(values)
+        elif value is None:
+            conditions.append(f'{col} IS NULL')
         else:
             conditions.append(f'{col} = ?')
             params.append(value)
@@ -114,6 +119,8 @@ def delete_version(table: str, dataset_version: str, db_path=None, demo: bool = 
 
 def migrate_table(table: str, db_path=None, demo: bool = False) -> str:
     """Rename an outdated table to <table>_old_<n> so connect() can create the new layout."""
+    if table not in TABLES:
+        raise ValueError(f'unknown Phase 2 table {table!r}')
     con = _p1_connect(db_path_for(demo, db_path))
     try:
         names = {r[0] for r in con.execute('SHOW TABLES').fetchall()}

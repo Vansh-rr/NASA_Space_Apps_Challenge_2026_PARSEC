@@ -87,7 +87,11 @@ def build_match_candidates(
 
         dist = haversine_km(m['latitude'].to_numpy()[mi], m['longitude'].to_numpy()[mi],
                             v['latitude'].to_numpy()[vi], v['longitude'].to_numpy()[vi])
-        dt = (v['acq_datetime_utc'].to_numpy()[vi] - m['acq_datetime_utc'].to_numpy()[mi])
+        # Timezone-aware Series otherwise become object arrays of Timestamp,
+        # which cannot be divided by numpy timedelta64 (pandas 2 / numpy 2).
+        vt = pd.to_datetime(v['acq_datetime_utc'], utc=True).to_numpy(dtype='datetime64[ns]')
+        mt = pd.to_datetime(m['acq_datetime_utc'], utc=True).to_numpy(dtype='datetime64[ns]')
+        dt = vt[vi] - mt[mi]
         dt_min = np.abs(dt / np.timedelta64(1, 'm')).astype(float)
         keep = (dist <= limits[mi]) & (dt_min <= max_dt / pd.Timedelta(minutes=1))
         if not keep.any():

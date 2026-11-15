@@ -1,7 +1,7 @@
 # PARSEC Phase 2 settings, the place these values live
 # phase2_config.py reads and checks this file
 
-config_version: "2.1.0"
+config_version: "2.2.0"
 
 # study regions: bbox = [west, south, east, north] in degrees
 regions:

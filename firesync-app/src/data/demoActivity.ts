@@ -23,7 +23,7 @@ const DEMO_EXPLORE_FIRES: FireObservation[] = DEMO_ACTIVITY.flatMap((cell) =>
   generateDemoFires({
     regionId: 'california',
     month: toMonthKey(cell.year, cell.month),
-    count: Math.max(3, Math.round(cell.value / 520)),
+    count: Math.max(3, Math.round((cell.value ?? 0) / 520)),
     sensor: 'harmonized',
     seedKey: 'explore',
   }),

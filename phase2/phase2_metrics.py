@@ -23,6 +23,18 @@ def compute_metrics(reference, predicted, lower=None, upper=None) -> dict:
     """All metrics for one set of rows. Rows with a missing value are skipped."""
     y = np.asarray(reference, float)
     p = np.asarray(predicted, float)
+    if y.ndim != 1 or p.ndim != 1 or y.shape != p.shape:
+        raise ValueError('reference and predicted must be equal-length one-dimensional arrays')
+    if (lower is None) != (upper is None):
+        raise ValueError('supply both lower and upper interval bounds')
+    if lower is not None:
+        lower, upper = np.asarray(lower, float), np.asarray(upper, float)
+        if lower.shape != y.shape or upper.shape != y.shape:
+            raise ValueError('interval bounds must have the same shape as reference')
+        if np.any(np.isfinite(lower) & np.isfinite(upper) & (lower > upper)):
+            raise ValueError('lower interval bound exceeds upper')
+    if np.any(np.isfinite(y) & (y < 0)) or np.any(np.isfinite(p) & (p < 0)):
+        raise ValueError('FRP values must be nonnegative')
     ok = np.isfinite(y) & np.isfinite(p)
     y, p = y[ok], p[ok]
     out = {m: np.nan for m in METRICS}

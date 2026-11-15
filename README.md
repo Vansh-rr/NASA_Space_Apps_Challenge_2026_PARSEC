@@ -1,3 +1,19 @@
+# PARSEC / FireSync
+
+Read [START_HERE.md](START_HERE.md) for setup, safe Git application, demo startup and limitations. The audit findings and test evidence are in [docs/REPOSITORY_AUDIT.md](docs/REPOSITORY_AUDIT.md) and [docs/REPAIR_TEST_RESULTS.md](docs/REPAIR_TEST_RESULTS.md).
+
+Run every offline check with one command:
+
+```bash
+python run_tests.py --install
+```
+
+Use `python run_tests.py` on subsequent runs. Python 3.12, Node.js 24 LTS and GCC were used for verification. Tests do not require NASA credentials.
+
+The harmonized engineering view defaults to an identity baseline. The separate Bayesian mask preview is exploratory, uses illustrative parameters and has no validated physical FRP accuracy. Missing data remains unknown.
+
+---
+
 ## Scientific Background
 ### MODIS 
 **MODIS (Moderate Resolution Imaging Spectroradiometer)**
@@ -52,7 +68,7 @@ python phase2_test.py
 python phase2_run.py --demo --no-plots
 ```
 
-`phase2_test.py` runs both the team's pytest suite and the independent C test suite.
+`phase2_test.py` remains a legacy Phase 2-only entry point. Use `run_tests.py` for Phase 1, Phase 2, Phase 3/API, model preview, C and frontend checks.
 `phase2_run.py --demo` seeds a fresh synthetic Phase 2 fixture, runs the engineering
 pipeline and runs the independent algorithm offline. Neither touches the real database.
 The C stress-test warning is retained and does not certify numerical scalability.
