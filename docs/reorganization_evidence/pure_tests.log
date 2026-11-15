@@ -1,0 +1,25 @@
+....................                                                     [100%]
+=============================== warnings summary ===============================
+tests_phase2/test_phase2_grid.py::test_round_trip_assign_cells
+tests_phase2/test_phase2_grid.py::test_round_trip_assign_cells
+tests_phase2/test_phase2_grid.py::test_assign_cells_differs_between_regions
+tests_phase2/test_phase2_grid.py::test_assign_cells_differs_between_regions
+tests_phase2/test_phase2_grid.py::test_assign_cells_differs_between_regions
+tests_phase2/test_phase2_grid.py::test_assign_cells_differs_between_regions
+  /opt/pyvenv/lib/python3.13/site-packages/pyproj/transformer.py:816: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    return self._transformer._transform_point(
+
+tests_phase2/test_phase2_sensor_comparison.py::test_raw_comparison_and_group_frp
+  /opt/pyvenv/lib/python3.13/site-packages/numpy/lib/_function_base_impl.py:3065: RuntimeWarning: invalid value encountered in divide
+    c /= stddev[:, None]
+
+tests_phase2/test_phase2_sensor_comparison.py::test_raw_comparison_and_group_frp
+  /opt/pyvenv/lib/python3.13/site-packages/numpy/lib/_function_base_impl.py:3066: RuntimeWarning: invalid value encountered in divide
+    c /= stddev[None, :]
+
+tests_phase2/test_phase2_sensor_comparison.py::test_raw_comparison_and_group_frp
+  /tmp/parsec_org/PARSEC_Organized/phase2/phase2_sensor_comparison.py:213: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+    return df.groupby(group_cols, observed=True).apply(_stats).reset_index()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+20 passed, 1 deselected, 9 warnings in 0.48s

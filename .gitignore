@@ -1,4 +1,24 @@
-node_modules
-dist
+# secrets
 .env
-.env.local
+
+data/*
+!data/sample/
+*.duckdb
+*.duckdb.wal
+
+__pycache__/
+.ipynb_checkpoints/
+
+/.venv/
+.idea/
+exports/
+
+# Local builds, test and satellite outputs
+.pytest_cache/
+phase2/algorithm/parsec
+phase2/algorithm/algorithm_test_output/
+phase2/algorithm/output/
+algorithm_test_output/
+*.pyc
+.netrc
+.earthaccess/

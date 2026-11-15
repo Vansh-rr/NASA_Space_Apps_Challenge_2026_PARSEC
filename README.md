@@ -1,80 +1,95 @@
-# FireSync
+## Scientific Background
+### MODIS 
+**MODIS (Moderate Resolution Imaging Spectroradiometer)**
+Is an Earth-observing instrument aboard NASA's **Terra** and **Aqua** satellites.
+It is widely used of monitoring several land resources apart from fire.
+Method of detection for thermal anomaly detection is to compare neighbouring pixels to identify degree of thermal discharge.
+The standard product has a spatial resolution of approximately **1km**.
+MODIS provides one of longest satellie based fire activity records.
 
-Wildfire data explorer with three pages: **Explore** (`/`), **Analytics** (`/analytics`) and **Compare** (`/compare`).
-React + TypeScript + Vite, MapLibre GL JS for maps, Recharts for charts, CSS Modules for styling.
+### VIIRS
+**VIIRS (Visible Infrared Imagining Radiometer Suite)**
+Is a newer generation Earth-observing  intrument on **Suomi NPP, NOAA-20 and NOAA-21**.
+It detects fire/thermalactivity on global scale , in a similar fashion as to MODIS.
+The standard product has a spatial resolution of approximately **375m**.
+VIIRIS gives a better representation of large fire perimeters.
 
-## Run it
+### The MODIS-VIIRS Harmonization Problem
+Central to this is an Harmonization Problem , which stems from the difference in size of spatial resolution;
+i.e. MODIS-----> 1km vs. VIIRS-----> 375m
+Some other key issues are :-
+- **Spatial sensitivity:** VIIRS can detect smaller and weaker thermal anomalies.
+- **Spectral response:** They use different spectral bands and detector charactristics.
+- **Detection algorithm:** fire classifications thresholds and tests are not identical.
+- **Observation timing:** different satellites may have different times of observation over the same geographical region.
+- **Measurement uncertainity:** different sensors have different confidence and intesity estimates.
+
+# Phase 1 
+
+## Setup
+
+1. Get a [FIRMS MAP_KEY](https://firms.modaps.eosdis.nasa.gov/api/map_key/) and save it as a GitHub Codespaces secret named `FIRMS_MAP_KEY`, scoped to this repository. Restart your Codespace after adding it.
+2. Run: `python -m pip install -r requirements.txt`
+3. Run the demo: `python phase1_run.py`. No API key or NASA network call is needed.
+4. Run real test data: `python phase1_run.py --real --start 2023-07-01 --end 2023-07-05`.
+5. Run July 2023: `python phase1_run.py --real`.
+6. View all flags: `python phase1_run.py --help`.
+
+# Phase 2 — engineering and scientific harmonization
+
+Phase 1 stays at the repository root with its original files and commands. Phase 2
+modules live in `phase2/`; the independent scientific engine lives in
+`phase2/algorithm/`. Its C source and all its original Python scripts are unchanged.
+
+## Quick start (from repository root)
 
 ```bash
-npm install
-npm run dev        # http://localhost:5173
-npm run build      # type check + production build
-npm run preview    # serve the production build
-npm test           # unit tests (Vitest)
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python phase1_run.py
+python phase2_test.py
+python phase2_run.py --demo --no-plots
 ```
 
-## Demo data
+`phase2_test.py` runs both the team's pytest suite and the independent C test suite.
+`phase2_run.py --demo` seeds a fresh synthetic Phase 2 fixture, runs the engineering
+pipeline and runs the independent algorithm offline. Neither touches the real database.
+The C stress-test warning is retained and does not certify numerical scalability.
 
-There is no backend yet. Every number, chart point and map point is **generated demo data**, labeled "Demo data"
-in the UI. It is seeded, so it is identical on every reload.
+## Real workflows
 
-- `src/data/demoModel.ts`: the seasonal model (activity by month and year).
-- `src/data/demoSensors.ts`: per-sensor records shared by Analytics and Compare. California, August 2024 reproduces
-  the design reference values exactly.
-- `src/data/demoActivity.ts`, `src/data/demoFires.ts`: Explore heatmap values and map points.
-
-## Connecting the backend
-
-Components never import demo data directly; they go through the service adapters. Replace the bodies of these
-functions with API calls and keep the return types:
-
-| Page | Adapter | Return type |
-| --- | --- | --- |
-| Explore | `src/services/fireData.ts`, `src/services/geocoding.ts` | `ActivityCell[]`, `FireObservation[]`, `SelectedLocation[]` |
-| Analytics | `src/services/analyticsService.ts` → `fetchAnalytics` | `AnalyticsResponse` |
-| Compare | `src/services/comparisonService.ts` → `fetchComparison` | `ComparisonResponse` |
-
-Set `isDemo: false` and a real `updatedAt` in the responses and the "Demo data" badges turn into update times.
-Stale requests are already cancelled (`src/hooks/useServiceQuery.ts`).
-
-Decisions still open before live data (see the `methodology` strings in the services): the anomaly baseline, what
-"Total FRP" aggregates, how clusters are defined, and how the harmonized record is produced. The demo never sums
-MODIS and VIIRS.
-
-## Map imagery
-
-The basemap defaults to Esri World Imagery raster tiles with attribution. Review the provider's terms before
-production use, or point to another provider in `.env` (see `.env.example`):
-
-```
-VITE_SATELLITE_TILES=https://example.com/tiles/{z}/{x}/{y}.jpg
-VITE_SATELLITE_ATTRIBUTION=© Example Imagery
+```bash
+python phase1_run.py --real --start 2023-07-01 --end 2023-07-31
+python phase2_run.py --start 2023-07-01 --end 2023-07-31
 ```
 
-If tiles fail to load, the map says so and still draws the fire points.
+The latter runs the engineering pipeline and identity baseline, not the C field model.
+For an end-to-end run including exploratory NASA mask harmonization:
 
-## Structure
-
-```
-src/
-  app/App.tsx                 routes (pages are lazy-loaded)
-  pages/                      ExplorePage, AnalyticsPage, ComparePage (+ CSS modules)
-  components/layout/          AppHeader
-  components/map/             FireMap (shared by all pages), controls, legend, popup, style
-  components/search/          SearchPanel, SearchModeToggle
-  components/activity/        ActivityHeatmap, ActivityLegend
-  components/filters/         Region/Month selects, AnalyticsFilters
-  components/metrics/         MetricsGrid
-  components/charts/          FrpTimeChart, DetectionComparisonChart, ChartDataTable, ChartTooltip
-  components/compare/         ComparisonToolbar, SensorMapCard, SensorTrendCard, ...
-  hooks/                      data queries, synced map camera, search, reduced motion
-  services/                   data adapters (demo now, API later)
-  data/                       regions, sensor config, demo generators
-  types/ utils/ styles/
+```bash
+python phase2_run.py --start 2023-07-01 --end 2023-07-31 --nasa-csv-dir /absolute/path/to/extracted --max-folds 4
 ```
 
-## Not in this prototype
+To test the algorithm independently of the engineering work:
 
-- Download and About are shown as "Soon" in the header.
-- The bell and avatar are presentational; there is no account or notification system.
-- Browser end-to-end tests (Playwright) are not set up; unit tests cover the data and filter logic.
+```bash
+python phase2_test.py --algorithm-only
+python phase2_test.py --algorithm-only --nasa-csv-dir /absolute/path/to/extracted --max-folds 4
+```
+
+If you have no extracted NASA science pixels:
+
+```bash
+python phase2_test.py --algorithm-only --nasa-live --install --max-folds 4
+```
+
+Earthdata credentials are required for live Level-2 downloads; a FIRMS MAP_KEY is
+not interchangeable with Earthdata login. A FIRMS hotspot CSV is not a Level-2 mask CSV.
+
+See [Phase 2 setup](docs/phase2_setup.md), [organization and testing](docs/REPOSITORY_ORGANIZATION.md),
+[scientific input contract](phase2/algorithm/REAL_DATA_CONTRACT.md), and
+[original independent algorithm report](docs/ALGORITHM_TEST_REPORT.md).
+
+
+- Observation coverage (Task 2.8): see [docs/phase2_coverage.md](docs/phase2_coverage.md)

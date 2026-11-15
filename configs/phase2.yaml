@@ -1,0 +1,100 @@
+# PARSEC Phase 2 settings, the place these values live
+# phase2_config.py reads and checks this file
+
+config_version: "2.1.0"
+
+# study regions: bbox = [west, south, east, north] in degrees
+regions:
+  british_columbia:
+    name: British Columbia, Canada
+    bbox: [-139.0, 48.0, -114.0, 60.0]
+  bc_dev:
+    name: Small BC development box (fast tests)
+    bbox: [-123.0, 52.0, -120.0, 54.0]
+
+default_region: british_columbia
+
+# study period used when nothing else is given (dates included)
+study_period:
+  start: "2023-07-01"
+  end: "2023-07-31"
+
+# FIRMS products we use and their satellites
+datasets:
+  MODIS_SP:
+    sensor_family: MODIS
+    satellites: [Terra, Aqua]
+  VIIRS_SNPP_SP:
+    sensor_family: VIIRS
+    satellites: [S-NPP]
+
+# when each satellite has fire data (end: null = still running)
+sensor_availability:
+  Terra: {start: "2000-02-24", end: null}
+  Aqua: {start: "2002-07-04", end: null}
+  S-NPP: {start: "2012-01-20", end: null}
+
+# overlap = both sensors available
+overlap_period:
+  start: "2012-01-20"
+  end: null
+
+# spatial grid (used by task 2.3)
+grid:
+  cell_sizes_km: [1, 5, 10]
+  default_cell_size_km: 5
+  crs: "EPSG:6933"   # equal-area projection, metres
+
+# time windows for aggregation
+time_windows: [day, 8day, month]
+default_time_window: day
+
+# MODIS-VIIRS matching (tasks 2.4-2.6)
+matching:
+  max_time_diff_minutes: 30        # same overpass
+  max_distance_km: 1.0             # extra distance on top of the footprint
+  use_footprint: true              # add half of the MODIS pixel size to the limit
+  max_viirs_per_modis: 50          # cap for one-to-many groups
+  require_same_daynight: true
+  overpass_gap_minutes: 10         # detections closer than this belong to one overpass
+
+# fire events (task 2.7): detections within eps_km in space AND eps_hours in time
+# are linked; chains of linked detections form one candidate event
+fire_events:
+  method: space_time_components
+  eps_km: 2.0
+  eps_hours: 24
+  min_detections: 1
+
+# harmonization model plumbing (tasks 2.13-2.14)
+model:
+  default_model: identity
+  target: frp_mw
+  uncertainty_level: 0.9
+
+# dataset splits (task 2.12 produces them in this format)
+# dataset splits (task 2.12): whole fire events (or time/space blocks) go to one split,
+# so the same fire is never in train and test
+splits:
+  names: [train, validation, test]
+  fractions: [0.7, 0.15, 0.15]     # share of match groups per split
+  methods: [event, time, region, random]
+  default_method: event
+  block_deg: 1.0                   # 'region' method: size of the space blocks (degrees)
+  seed: 42
+
+# version stamped on every derived table
+dataset_versions:
+  overlap: "2.2.0"
+  matching: "2.6.0"
+  events: "2.7.0"
+  features: "2.10.0"
+  splits: "2.12.0"
+  predictions: "2.13.0"
+  validation: "2.14.0"
+  history: "2.16.0"
+  analytics: "2.17.0"
+  comparison: "2.11.0"
+
+# keep demo output away from real NASA products
+demo_mode: false

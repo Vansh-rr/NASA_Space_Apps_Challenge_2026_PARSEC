@@ -1,0 +1,130 @@
+
+==================================== ERRORS ====================================
+__________ ERROR collecting tests_phase2/test_phase2_config_schema.py __________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_config_schema.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_config_schema.py:3: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+_________ ERROR collecting tests_phase2/test_phase2_events_database.py _________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_events_database.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_events_database.py:3: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+____________ ERROR collecting tests_phase2/test_phase2_features.py _____________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_features.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_features.py:8: in <module>
+    from phase2.phase2_features import EXTRA_COLUMNS, build_matched_features
+phase2/phase2_features.py:5: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+____________ ERROR collecting tests_phase2/test_phase2_matching.py _____________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_matching.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_matching.py:9: in <module>
+    from phase2.phase2_overlap import extract_overlap
+phase2/phase2_overlap.py:8: in <module>
+    from phase1_database import DEMO_DB_PATH, connect_db as _p1_connect
+phase1_database.py:4: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+_________ ERROR collecting tests_phase2/test_phase2_model_interface.py _________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_model_interface.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_model_interface.py:7: in <module>
+    from phase2.phase2_database import store
+phase2/phase2_database.py:7: in <module>
+    from phase1_database import DB_PATH, DEMO_DB_PATH, connect_db as _p1_connect
+phase1_database.py:4: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+____________ ERROR collecting tests_phase2/test_phase2_pipeline.py _____________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_pipeline.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_pipeline.py:7: in <module>
+    from phase2.phase2_database import table_counts
+phase2/phase2_database.py:7: in <module>
+    from phase1_database import DB_PATH, DEMO_DB_PATH, connect_db as _p1_connect
+phase1_database.py:4: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+__________ ERROR collecting tests_phase2/test_phase2_source_flags.py ___________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_source_flags.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_source_flags.py:7: in <module>
+    from phase1_database import load_standardized
+phase1_database.py:4: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+_____________ ERROR collecting tests_phase2/test_phase2_splits.py ______________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_splits.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_splits.py:9: in <module>
+    from phase2.phase2_database import store
+phase2/phase2_database.py:7: in <module>
+    from phase1_database import DB_PATH, DEMO_DB_PATH, connect_db as _p1_connect
+phase1_database.py:4: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+___________ ERROR collecting tests_phase2/test_phase2_validation.py ____________
+ImportError while importing test module '/tmp/parsec_org/PARSEC_Organized/tests_phase2/test_phase2_validation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests_phase2/test_phase2_validation.py:7: in <module>
+    from phase2.phase2_model_interface import register_model, run_model
+phase2/phase2_model_interface.py:8: in <module>
+    from phase2.phase2_database import connect, store
+phase2/phase2_database.py:7: in <module>
+    from phase1_database import DB_PATH, DEMO_DB_PATH, connect_db as _p1_connect
+phase1_database.py:4: in <module>
+    import duckdb
+E   ModuleNotFoundError: No module named 'duckdb'
+=========================== short test summary info ============================
+ERROR tests_phase2/test_phase2_config_schema.py
+ERROR tests_phase2/test_phase2_events_database.py
+ERROR tests_phase2/test_phase2_features.py
+ERROR tests_phase2/test_phase2_matching.py
+ERROR tests_phase2/test_phase2_model_interface.py
+ERROR tests_phase2/test_phase2_pipeline.py
+ERROR tests_phase2/test_phase2_source_flags.py
+ERROR tests_phase2/test_phase2_splits.py
+ERROR tests_phase2/test_phase2_validation.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 9 errors during collection !!!!!!!!!!!!!!!!!!!!
+9 errors in 0.59s

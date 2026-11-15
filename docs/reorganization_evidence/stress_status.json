@@ -1,0 +1,5 @@
+{
+  "executed": true,
+  "numerical_warning": true,
+  "interpretation": "Stress execution is not a stability pass; do not hide low ESS or ancestry warnings."
+}

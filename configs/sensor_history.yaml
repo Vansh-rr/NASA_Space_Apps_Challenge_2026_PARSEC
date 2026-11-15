@@ -1,0 +1,43 @@
+# known sensor / product problems (task 2.9)
+# detections in these periods are only FLAGGED, never deleted
+# dates are UTC and inclusive; add new rows when NASA announces new problems
+
+periods:
+  - flag_id: terra_early_calibration
+    satellite: Terra
+    source_dataset: MODIS_SP
+    start: "2000-02-24"
+    end: "2000-11-01"
+    flag: early_terra_data
+    description: >-
+      First months of Terra MODIS: band 21 miscalibration (Feb-Mar 2000), dead detectors,
+      crosstalk and calibration problems until early November 2000; small and large fires
+      can be missed or striped. Source: MODIS C6/C6.1 Fire User Guide, sections 7.2.1 and 8.3.10.
+
+  - flag_id: aqua_fmu_failure_2020
+    satellite: Aqua
+    source_dataset: MODIS_SP
+    start: "2020-08-16"
+    end: "2020-09-02"
+    flag: sensor_outage
+    description: >-
+      Aqua formatter-multiplexer unit failure on 16 Aug 2020: about two weeks of science
+      telemetry lost, only limited direct-broadcast coverage. Source: MODIS C6/C6.1 Fire
+      User Guide, section 7.2.4.
+
+  - flag_id: snpp_safe_mode_2022
+    satellite: S-NPP
+    source_dataset: VIIRS_SNPP_SP
+    start: "2022-07-26"
+    end: "2022-08-20"
+    flag: sensor_outage
+    description: >-
+      Suomi NPP safe mode from 26 Jul 2022; VIIRS land products resumed 20 Aug 2022 and the
+      data lost in between cannot be recovered. Source: NASA Earthdata outage notice
+      "Suomi NPP recovers from safe mode".
+
+# FIRMS 'type' field (hotspot_type_raw): anything other than 0 is not a vegetation fire
+static_source_types:
+  1: active_volcano
+  2: other_static_land_source
+  3: offshore
