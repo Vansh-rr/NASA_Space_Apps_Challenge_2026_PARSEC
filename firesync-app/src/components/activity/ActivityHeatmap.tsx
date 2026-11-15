@@ -14,7 +14,7 @@ interface Props {
 
 /** 5 × 12 matrix of monthly activity. One scale is shared by the whole matrix. */
 export function ActivityHeatmap({ cells, unit, selected, onToggle }: Props) {
-  const max = Math.max(...cells.map((c) => c.value));
+  const max = Math.max(1, ...cells.map((c) => c.value ?? 0));
   const years = [...new Set(cells.map((c) => c.year))].sort((a, b) => b - a);
 
   return (
@@ -36,13 +36,13 @@ export function ActivityHeatmap({ cells, unit, selected, onToggle }: Props) {
               .sort((a, b) => a.month - b.month)
               .map((cell) => {
                 const isSelected = selected?.year === cell.year && selected.month === cell.month;
-                const description = `${monthLabel(toMonthKey(cell.year, cell.month))}: ${formatCount(cell.value)} ${unit} (demo)`;
+                const description = `${monthLabel(toMonthKey(cell.year, cell.month))}: ${cell.value === null ? 'No coverage information' : `${formatCount(cell.value)} ${unit}`}${cell.isDemo ? ' (demo)' : ''}`;
                 return (
                   <button
                     key={cell.month}
                     type="button"
                     className={`${styles.cell} ${isSelected ? styles.cellSelected : ''}`}
-                    style={{ background: rampColor(cell.value / max, ACTIVITY_RAMP) }}
+                    style={{ background: cell.value === null ? '#E6E8EC' : rampColor(cell.value / max, ACTIVITY_RAMP) }}
                     aria-label={description}
                     aria-pressed={isSelected}
                     title={description}

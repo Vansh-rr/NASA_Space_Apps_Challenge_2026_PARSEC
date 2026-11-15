@@ -1,0 +1,113 @@
+Rows retained for database: 101 / 101
+test_modis: +101 inserted (101 total); Parquet: test_modis.parquet
+Rows retained for database: 305 / 305
+test_viirs: +305 inserted (406 total); Parquet: test_viirs.parquet
+Synthetic Phase 2 fixture: /workspace/scratch/a6a92fdeea05/demo_app_smoke/demo_fires.duckdb
+
+=== flags ===
+source_history_flags: +6 rows (6 total)
+
+=== overlap ===
+Saved 405 overlap observations -> /workspace/scratch/a6a92fdeea05/demo_app_smoke/demo/phase2/overlap/overlap_british_columbia.parquet
+overlap_observations: +405 rows (405 total)
+
+=== grid ===
+grid_cells: +369 rows (369 total)
+grid_observations: +1,215 rows (1,215 total)
+
+=== matching ===
+
+Matching summary
+  Overlap observations  : 405
+  Match groups          : 100
+  Matched MODIS         : 100
+  Matched VIIRS         : 300
+  Unmatched total       : 5
+  Unmatched by reason   : {'no_candidate_in_space': 5}
+  Mean distance (km)    : 0.329
+  Mean time diff (min)  : 10.0
+  Mean VIIRS per group  : 3.0
+overpass_groups: +10 rows (10 total)
+match_candidates: +300 rows (300 total)
+matched_observations: +300 rows (300 total)
+unmatched_observations: +5 rows (5 total)
+
+=== events ===
+fire_events: +100 rows (100 total)
+fire_event_observations: +405 rows (405 total)
+
+=== comparison ===
+sensor_comparison_summary: +84 rows (84 total)
+report: /workspace/scratch/a6a92fdeea05/demo_app_smoke/demo/phase2/reports/sensor_comparison/british_columbia
+
+=== features ===
+matched_features: +100 rows (100 total)
+matched_features: 100 rows -> /workspace/scratch/a6a92fdeea05/demo_app_smoke/demo/phase2/features/matched_features.parquet
+
+=== splits ===
+dataset_splits: +100 rows (100 total)
+
+=== datasets ===
+
+=== baseline ===
+model_runs: +1 rows (1 total)
+model_predictions: +100 rows (100 total)
+
+=== validation ===
+model_validation_results: +160 rows (160 total)
+report: /workspace/scratch/a6a92fdeea05/demo_app_smoke/demo/phase2/reports/validation/run_718967dbc55f464f2f811e7b
+
+=== history ===
+historical_observations: +155 rows (155 total)
+historical_harmonized_activity: +5 rows (5 total)
+historical_observations: +25 rows (180 total)
+historical_harmonized_activity: +2 rows (7 total)
+historical_observations: +5 rows (185 total)
+historical_harmonized_activity: +1 rows (8 total)
+historical_observations: +5 rows (190 total)
+historical_harmonized_activity: +1 rows (9 total)
+
+=== analytics ===
+fire_calendar: +6 rows (6 total)
+dashboard files: /workspace/scratch/a6a92fdeea05/demo_app_smoke/demo/phase2/analytics/british_columbia
+
+=== done ===
+      step  seconds                                                                                                                                                                                                                                                                                                                        result
+     flags      0.1                                                                                                                                                                                                                                                                                                                  {"flags": 6}
+   overlap      0.1                                                                                                                                                                                                                                                                                                           {"detections": 405}
+      grid      0.2                                                                                                                                                                                                                                                                                           {"cells": 369, "assignments": 1215}
+  matching      0.5                                                                                                                                                                                                                                                                                         {"match_groups": 100, "unmatched": 5}
+    events      0.1                                                                                                                                                                                                                                                                                                          {"fire_events": 100}
+comparison      0.2                                                                                                                                                                                                                                {"raw_pairs": 300, "summary_rows": 84, "reference": "sensor agreement, not independent truth"}
+  features      0.1                                                                                                                                                                                                                                                                                                         {"feature_rows": 100}
+    splits      0.1                                                                                                                                                                                                                                                                {"train": 70, "test": 15, "validation": 15, "leak_free": true}
+  datasets      0.1 {"train": "/workspace/scratch/a6a92fdeea05/demo_app_smoke/demo/phase2/model_input/event/train.parquet", "validation": "/workspace/scratch/a6a92fdeea05/demo_app_smoke/demo/phase2/model_input/event/validation.parquet", "test": "/workspace/scratch/a6a92fdeea05/demo_app_smoke/demo/phase2/model_input/event/test.parquet"}
+  baseline      0.1                                                                                                                                                                                                                                                                   {"run": "run_718967dbc55f464f2f811e7b", "predictions": 100}
+validation      0.3                                                                                                                                                                                                                                                              {"test_mae": 16.27, "test_r": NaN, "test_split_available": true}
+   history      1.1                                                                                                                                                                                                                                                                               {"day": 155, "8day": 25, "month": 5, "year": 5}
+ analytics      0.2                                                                                                                                                                                                                                                            {"fire_calendar": 6, "seasonal_baselines": 0, "fire_anomalies": 0}
+
+                         table  rows
+                  observations   406
+          overlap_observations   405
+               overpass_groups    10
+              match_candidates   300
+          matched_observations   300
+        unmatched_observations     5
+                dataset_splits   100
+                    model_runs     1
+             model_predictions   100
+      model_validation_results   160
+                    grid_cells   369
+             grid_observations  1215
+                   fire_events   100
+       fire_event_observations   405
+          observation_coverage     0
+          source_history_flags     6
+              matched_features   100
+       historical_observations   190
+historical_harmonized_activity     9
+                 fire_calendar     6
+            seasonal_baselines     0
+                fire_anomalies     0
+     sensor_comparison_summary    84

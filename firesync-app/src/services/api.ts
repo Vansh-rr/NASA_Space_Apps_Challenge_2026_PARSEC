@@ -17,7 +17,16 @@ export async function getJson<T>(
   params?: Record<string, string | number | boolean | null | undefined>,
   signal?: AbortSignal,
 ): Promise<T> {
-  const url = new URL(path.startsWith('/') ? `${API_BASE}${path}` : `${API_BASE}/${path}`);
+  return (await getJsonPage<T>(path, params, signal)).data;
+}
+
+export async function getJsonPage<T>(
+  path: string,
+  params?: Record<string, string | number | boolean | null | undefined>,
+  signal?: AbortSignal,
+): Promise<{ data: T; headers: Headers }> {
+  const url = new URL(path.startsWith('/') ? `${API_BASE}${path}` : `${API_BASE}/${path}`,
+    globalThis.location?.origin ?? 'http://localhost');
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== null) {
@@ -40,7 +49,7 @@ export async function getJson<T>(
     }
     throw new Error(`API ${res.status}: ${detail}`);
   }
-  return res.json() as Promise<T>;
+  return { data: await res.json() as T, headers: res.headers };
 }
 
 export function toObservation(p: ApiObservation): FireObservation {

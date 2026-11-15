@@ -9,6 +9,7 @@ export function ActivityLegend() {
         <span>Low</span>
         <span>High</span>
       </div>
+      <span>Grey: coverage unknown</span>
     </div>
   );
 }

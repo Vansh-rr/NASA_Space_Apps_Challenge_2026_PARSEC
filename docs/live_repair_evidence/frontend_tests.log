@@ -1,0 +1,13 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> firesync@0.1.0 test
+> vitest run
+
+
+ RUN  v5.1.0 /workspace/scratch/a6a92fdeea05/live/PARSEC/firesync-app
+
+
+ Test Files  6 passed (6)
+      Tests  46 passed (46)
+   Start at  21:45:04
+   Duration  495ms (transform 67%, import 24%, tests 7%, worker 2%)

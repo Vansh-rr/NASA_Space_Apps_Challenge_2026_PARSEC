@@ -24,7 +24,8 @@ export interface ActivityCell {
   /** 1–12 */
   month: number;
   /** Monthly detection count; the same aggregate for every cell. */
-  value: number;
+  value: number | null;
+  isDemo?: boolean;
 }
 
 export interface Period {

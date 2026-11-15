@@ -21,7 +21,7 @@ _TIE_PRIORITY = {'unavailable': 4, 'cloudy': 3, 'unknown': 2, 'observed': 1}
 def coverage_version(cfg: Phase2Config | None = None) -> str:
     """Return the dataset version string for observation coverage."""
     cfg = cfg or get_config()
-    return f'{COVERAGE_PRODUCT_VERSION}+cfg{cfg.config_version}'
+    return f'{COVERAGE_PRODUCT_VERSION}+cfg{cfg.config_version}+settings{cfg.settings_hash()}'
 
 
 def satellite_available(

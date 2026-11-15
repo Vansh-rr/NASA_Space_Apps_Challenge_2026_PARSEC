@@ -1,74 +1,21 @@
-# FireSync
+# FireSync frontend
 
-Wildfire data explorer with three pages: **Explore** (`/`), **Analytics** (`/analytics`) and **Compare** (`/compare`).
-React + TypeScript + Vite, MapLibre GL JS for maps, Recharts for charts, CSS Modules for styling.
-
-## Run it
+React + TypeScript + Vite interface for the PARSEC read-only API. Run commands from this directory:
 
 ```bash
-npm install
-npm run dev        # http://localhost:5173
-npm run build      # type check + production build
-npm run preview    # serve the production build
-npm test           # unit tests (Vitest)
+npm ci
+npm run dev
 ```
 
-## Demo data
+The API defaults to `http://localhost:8000`. Set `VITE_API_BASE_URL` in an untracked `.env.local` if needed. See `.env.example`. A relative URL such as `/api` is supported with a reverse proxy. Keep NASA keys and Earthdata credentials on the backend.
 
-There is no backend yet. Every number, chart point and map point is **generated demo data**, labeled "Demo data"
-in the UI. It is seeded, so it is identical on every reload.
+Explore uses `/activity` and paginated `/observations`. Compare and Analytics use `/comparison`, including deterministic map samples. Model Preview uses `/model-preview/*`, including all field pages within the actual preview bounds. Missing activity dates/FRP remain null and render as gaps. Detection markers are points, not pixel footprints or burned area. Demo provenance is preserved in badges and map popups.
 
-- `src/data/demoModel.ts`: the seasonal model (activity by month and year).
-- `src/data/demoSensors.ts`: per-sensor records shared by Analytics and Compare. California, August 2024 reproduces
-  the design reference values exactly.
-- `src/data/demoActivity.ts`, `src/data/demoFires.ts`: Explore heatmap values and map points.
+The default harmonized engineering run is the identity baseline. The independent Bayesian mask preview uses illustrative parameters. Neither view establishes superiority over NASA products. About describes the implemented prototype and its limits.
 
-## Connecting the backend
-
-Components never import demo data directly; they go through the service adapters. Replace the bodies of these
-functions with API calls and keep the return types:
-
-| Page | Adapter | Return type |
-| --- | --- | --- |
-| Explore | `src/services/fireData.ts`, `src/services/geocoding.ts` | `ActivityCell[]`, `FireObservation[]`, `SelectedLocation[]` |
-| Analytics | `src/services/analyticsService.ts` → `fetchAnalytics` | `AnalyticsResponse` |
-| Compare | `src/services/comparisonService.ts` → `fetchComparison` | `ComparisonResponse` |
-
-Set `isDemo: false` and a real `updatedAt` in the responses and the "Demo data" badges turn into update times.
-Stale requests are already cancelled (`src/hooks/useServiceQuery.ts`).
-
-Decisions still open before live data (see the `methodology` strings in the services): the anomaly baseline, what
-"Total FRP" aggregates, how clusters are defined, and how the harmonized record is produced. The demo never sums
-MODIS and VIIRS.
-
-## Map imagery
-
-The basemap defaults to Esri World Imagery raster tiles with attribution. Review the provider's terms before
-production use, or point to another provider in `.env` (see `.env.example`):
-
-```
-VITE_SATELLITE_TILES=https://example.com/tiles/{z}/{x}/{y}.jpg
-VITE_SATELLITE_ATTRIBUTION=© Example Imagery
+```bash
+npm test
+npm run build
 ```
 
-If tiles fail to load, the map says so and still draws the fire points.
-
-## Structure
-
-```
-src/
-  app/App.tsx                 routes (pages are lazy-loaded)
-  pages/                      ExplorePage, AnalyticsPage, ComparePage (+ CSS modules)
-  components/layout/          AppHeader
-  components/map/             FireMap (shared by all pages), controls, legend, popup, style
-  components/search/          SearchPanel, SearchModeToggle
-  components/activity/        ActivityHeatmap, ActivityLegend
-  components/filters/         Region/Month selects, AnalyticsFilters
-  components/metrics/         MetricsGrid
-  components/charts/          FrpTimeChart, DetectionComparisonChart, ChartDataTable, ChartTooltip
-  components/compare/         ComparisonToolbar, SensorMapCard, SensorTrendCard, ...
-  hooks/                      data queries, synced map camera, search, reduced motion
-  services/                   data adapters (demo now, API later)
-  data/                       regions, sensor config, demo generators
-  types/ utils/ styles/
-```
+For the complete Python, API, C and frontend test workflow, use `python run_tests.py --install` from the repository root. See `../START_HERE.md` for demo startup and Git instructions, and `../docs/REPOSITORY_AUDIT.md` for the repairs. External basemap tiles require browser network access. The bundled place search is a fixed demo catalogue; coordinates can be entered directly. A production geocoding provider, authentication, alerts and download UI are not implemented.

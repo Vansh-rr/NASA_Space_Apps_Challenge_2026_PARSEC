@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "endpoint": "/health",
+      "status": 200
+    },
+    {
+      "endpoint": "/regions",
+      "status": 200
+    },
+    {
+      "endpoint": "/observations?sensor=MODIS&limit=3",
+      "status": 200
+    },
+    {
+      "endpoint": "/comparison?sample=3",
+      "status": 200
+    },
+    {
+      "endpoint": "/activity?sensor=MODIS",
+      "status": 200
+    },
+    {
+      "endpoint": "/history?month=7",
+      "status": 200
+    },
+    {
+      "endpoint": "/model-preview/metadata",
+      "status": 200
+    },
+    {
+      "endpoint": "/model-preview/field?limit=3",
+      "status": 200
+    }
+  ]
+}

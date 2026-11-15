@@ -22,7 +22,7 @@ def test_health_sees_the_database(client):
 def test_health_without_database(tmp_path, monkeypatch):
     monkeypatch.setenv('PARSEC_DB_PATH', str(tmp_path / 'missing.duckdb'))
     body = TestClient(app).get('/health').json()
-    assert body['status'] == 'ok' and body['database_found'] is False
+    assert body['status'] == 'unavailable' and body['database_found'] is False
 
 
 def test_regions(client):
@@ -141,7 +141,7 @@ def test_history_per_year(history_client):
     assert body['sensor'] == 'MODIS' and [y['year'] for y in body['years']] == [2023]
     y = body['years'][0]
     assert y['n_detections'] == 101
-    assert y['anomaly']['n_detections']['anomaly_class'] == 'insufficient_history'   # one year only
+    assert y['coverage_state'] == 'partial_observed' and y['anomaly'] == {}
     harm = history_client.get('/history?month=7&sensor=harmonized').json()['years']
     assert len(harm) == 1 and harm[0]['anomaly'] == {}
 

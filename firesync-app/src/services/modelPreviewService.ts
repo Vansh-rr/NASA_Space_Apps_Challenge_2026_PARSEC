@@ -74,15 +74,21 @@ export function previewDateRange(
 export async function fetchModelPreview(signal?: AbortSignal): Promise<ModelPreviewData> {
   const metadata = await getJson<ModelPreviewMetadata>('/model-preview/metadata', undefined, signal);
   const { start, end } = previewDateRange(metadata);
-  const [field, validation] = await Promise.all([
-    getJson<{ items: ModelPreviewFieldItem[]; total: number }>(
-      '/model-preview/field',
-      { start, end, limit: 10000 },
-      signal,
-    ),
-    getJson<ModelPreviewValidation>('/model-preview/validation', undefined, signal),
-  ]);
-  return { metadata, items: field.items, validation };
+  const items: ModelPreviewFieldItem[] = [];
+  let total: number | undefined;
+  do {
+    const page = await getJson<{ items: ModelPreviewFieldItem[]; total: number }>(
+      '/model-preview/field', { start, end, bbox: metadata.bbox.join(','), limit: 10000, offset: items.length }, signal);
+    if (!Number.isSafeInteger(page.total) || page.total < 0 || (total !== undefined && total !== page.total)) {
+      throw new Error('Preview changed during loading. Please retry.');
+    }
+    total = page.total;
+    if (!page.items.length && items.length < total) throw new Error('Incomplete model preview. Please retry.');
+    items.push(...page.items);
+    if (items.length > total) throw new Error('Invalid model preview row count.');
+  } while (items.length < total);
+  const validation = await getJson<ModelPreviewValidation>('/model-preview/validation', undefined, signal);
+  return { metadata, items, validation };
 }
 
 export function hourlyMeanProbability(items: ModelPreviewFieldItem[]): HourlyProbability[] {

@@ -42,16 +42,16 @@ describe('toObservation', () => {
 });
 
 describe('fillDailyCounts', () => {
-  it('returns every day of the month and fills missing days with 0', () => {
+  it('returns every day of the month and preserves missing days as unknown', () => {
     const daily = fillDailyCounts('2023-07', [
       { date: '2023-07-02', detections: 14 },
       { date: '2023-07-15', detections: 89 },
     ]);
     expect(daily).toHaveLength(31);
-    expect(daily[0]).toEqual({ date: '2023-07-01', count: 0 });
+    expect(daily[0]).toEqual({ date: '2023-07-01', count: null });
     expect(daily[1]).toEqual({ date: '2023-07-02', count: 14 });
     expect(daily[14]).toEqual({ date: '2023-07-15', count: 89 });
-    expect(daily[30]).toEqual({ date: '2023-07-31', count: 0 });
+    expect(daily[30]).toEqual({ date: '2023-07-31', count: null });
     expect(daily.reduce((sum, d) => sum + (d.count ?? 0), 0)).toBe(103);
   });
 

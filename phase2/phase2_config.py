@@ -2,6 +2,8 @@ from __future__ import annotations
 from datetime import date
 from functools import lru_cache
 import math
+import hashlib
+import json
 import os
 from pathlib import Path
 from typing import Literal
@@ -19,7 +21,7 @@ TimeWindow = Literal['day', '8day', 'month']
 
 
 class _Strict(BaseModel):
-    model_config = ConfigDict(extra='forbid', frozen=True)
+    model_config = ConfigDict(extra='forbid', frozen=True, allow_inf_nan=False)
 
 
 class Region(_Strict):
@@ -107,6 +109,8 @@ class Splits(_Strict):
 
     @model_validator(mode='after')
     def check_fractions(self):
+        if sorted(self.names) != ['test', 'train', 'validation']:
+            raise ValueError('split names must contain train, validation and test exactly once')
         if len(self.fractions) != len(self.names):
             raise ValueError('splits.fractions needs one value per split name')
         if any(f < 0 for f in self.fractions) or abs(sum(self.fractions) - 1) > 1e-6:
@@ -159,9 +163,13 @@ class Phase2Config(_Strict):
 
     def version(self, product: str) -> str:
         try:
-            return f'{self.dataset_versions[product]}+cfg{self.config_version}'
+            return f'{self.dataset_versions[product]}+cfg{self.config_version}+settings{self.settings_hash()}'
         except KeyError:
             raise ValueError(f'no dataset version for {product!r}') from None
+
+    def settings_hash(self) -> str:
+        payload = self.model_dump(mode='json', exclude={'demo_mode'})
+        return hashlib.sha256(json.dumps(payload, sort_keys=True, allow_nan=False).encode()).hexdigest()[:16]
 
     def satellites_for(self, sensor_family: str) -> list[str]:
         return [sat for ds in self.datasets.values() if ds.sensor_family == sensor_family

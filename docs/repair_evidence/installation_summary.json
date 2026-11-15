@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "full_suite": true,
+  "preflight_errors": [],
+  "stages": [
+    {
+      "name": "install_python",
+      "exit_code": 0,
+      "passed": true,
+      "seconds": 5.581,
+      "log": "test-results/20261115T210655Z_pm7ncdua/install_python.log"
+    },
+    {
+      "name": "install_frontend",
+      "exit_code": 0,
+      "passed": true,
+      "seconds": 4.445,
+      "log": "test-results/20261115T210655Z_pm7ncdua/install_frontend.log"
+    },
+    {
+      "name": "python_tests",
+      "exit_code": 0,
+      "passed": true,
+      "seconds": 33.442,
+      "log": "test-results/20261115T210655Z_pm7ncdua/python_tests.log"
+    },
+    {
+      "name": "algorithm_offline",
+      "exit_code": 0,
+      "passed": true,
+      "seconds": 7.287,
+      "log": "test-results/20261115T210655Z_pm7ncdua/algorithm_offline.log"
+    },
+    {
+      "name": "frontend_tests",
+      "exit_code": 0,
+      "passed": true,
+      "seconds": 1.021,
+      "log": "test-results/20261115T210655Z_pm7ncdua/frontend_tests.log"
+    },
+    {
+      "name": "frontend_build",
+      "exit_code": 0,
+      "passed": true,
+      "seconds": 1.8,
+      "log": "test-results/20261115T210655Z_pm7ncdua/frontend_build.log"
+    }
+  ],
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "scientific_scope": "Offline engineering/regression checks. Synthetic tests do not validate real NASA accuracy. C stress run can exit successfully with a numerical warning; inspect stress_status.json."
+}

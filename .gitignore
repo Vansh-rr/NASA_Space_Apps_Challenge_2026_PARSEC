@@ -22,3 +22,15 @@ algorithm_test_output/
 *.pyc
 .netrc
 .earthaccess/
+
+# Unified test output and local tools
+/test-results/
+**/node_modules/
+**/dist/
+.env.*
+!.env.example
+!**/.env.example
+*.exe
+*.zip
+.Rhistory
+.DS_Store

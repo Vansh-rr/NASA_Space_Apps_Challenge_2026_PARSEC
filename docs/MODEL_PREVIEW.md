@@ -1,3 +1,5 @@
+> This original integration note is retained as historical context. The current repository includes the actual API, frontend and a committed exploratory payload. Use `START_HERE.md`, `docs/website_setup.md` and `docs/REPOSITORY_AUDIT.md` for the tested current setup. Historical statements below that no UI/backend was supplied apply to the earlier handoff only.
+
 # PARSEC Bayesian model preview — integration handoff
 
 ## Scope

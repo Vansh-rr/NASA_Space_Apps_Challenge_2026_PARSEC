@@ -8,7 +8,7 @@ from phase2.phase2_config import Phase2Config, load_config
 from phase2.phase2_database import connect, store
 from phase2.phase2_dataset_builder import build_model_input
 from phase2.phase2_metrics import METRICS, compute_metrics
-from phase2.phase2_model_interface import list_runs, load_predictions, run_model
+from phase2.phase2_model_interface import input_version, list_runs, load_predictions, run_model
 from phase2.phase2_schema import columns_of
 
 # validation of a harmonization run (task 2.14):
@@ -53,6 +53,9 @@ def validation_frame(run_id: str, db_path=None, demo=False, cfg: Phase2Config | 
     if pred.empty:
         raise RuntimeError(f'run {run_id} has no predictions')
     data = build_model_input(split_method_of(pred['dataset_version'].iloc[0]), db_path, demo, cfg)
+    if input_version(data) != pred['dataset_version'].iloc[0]:
+        raise RuntimeError('Model input has changed or the run predates input fingerprints. '
+                           'Rebuild the run before validation; historical labels cannot be reconstructed safely.')
     keep = ['unit_id', 'reference_value', 'region', 'modis_satellite', 'daynight', 'acq_date', 'n_viirs']
     f = pred.merge(data[[c for c in keep if c in data.columns]], on='unit_id', how='inner')
     f['residual'] = f['predicted_value'] - f['reference_value']
@@ -103,7 +106,13 @@ def validate(run_id: str | None = None, db_path=None, demo=False, cfg: Phase2Con
         if plots:
             make_plots(frame, validation_frame(base_id, db_path, demo, cfg), folder)
         print(f'report: {folder}')
-    return res.assign(skill=1 - res['value'] / res['baseline_value'])
+    # Error ratios have no useful interpretation for bias, correlations, R2 or
+    # interval coverage. Zero baseline error has no defined relative skill.
+    error_metrics = ['mae', 'rmse', 'median_abs_error', 'log_rmse']
+    skill = pd.Series(np.nan, index=res.index)
+    eligible = res['metric'].isin(error_metrics) & res['baseline_value'].gt(0)
+    skill.loc[eligible] = 1 - res.loc[eligible, 'value'] / res.loc[eligible, 'baseline_value']
+    return res.assign(skill=skill)
 
 
 def summary_text(res: pd.DataFrame, run_id: str, base_id: str) -> str:
@@ -142,7 +151,7 @@ def make_plots(frame: pd.DataFrame, base_frame: pd.DataFrame, folder):
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(6, 4))
-    lim = np.nanpercentile(np.abs(base_test['residual']), 95)
+    lim = max(float(np.nanpercentile(np.abs(base_test['residual']), 95)), 1e-6)
     bins = np.linspace(-lim, lim, 50)
     ax.hist(base_test['residual'], bins=bins, alpha=0.5, label='baseline')
     if frame['model_name'].iloc[0] != 'identity':

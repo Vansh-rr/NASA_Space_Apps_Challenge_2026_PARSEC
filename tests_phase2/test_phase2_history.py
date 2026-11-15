@@ -21,13 +21,14 @@ def test_missing_is_not_zero(cfg):
     # aqua fmu failure 16 aug - 2 sep 2020; S-NPP not launched in 2011
     h = build_history(obs, 'day', 'british_columbia', '2023-07-10', '2023-07-12', cfg)
     aqua = h[h['satellite'] == 'Aqua'].set_index('period_start')
-    assert list(aqua['coverage_state']) == ['observed', 'observed', 'no_detections']
-    assert list(aqua['n_detections']) == [1, 1, 0]
+    assert list(aqua['coverage_state']) == ['partial_observed', 'partial_observed', 'unknown']
+    assert list(aqua['n_detections'].iloc[:2]) == [1, 1]
+    assert pd.isna(aqua['n_detections'].iloc[2])
     assert aqua['frp_sum_mw'].iloc[0] == 20
 
     out = build_history(obs.iloc[:0], 'day', 'british_columbia', '2020-08-20', '2020-08-20', cfg)
     states = out.set_index('satellite')['coverage_state']
-    assert states['Aqua'] == 'outage' and states['Terra'] == 'no_detections'
+    assert states['Aqua'] == 'outage' and states['Terra'] == 'unknown'
     assert out.set_index('satellite').loc['Aqua', 'n_detections'] is pd.NA
     early = build_history(obs.iloc[:0], 'day', 'british_columbia', '2011-05-01', '2011-05-01', cfg)
     assert early.set_index('satellite').loc['S-NPP', 'coverage_state'] == 'sensor_unavailable'

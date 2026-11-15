@@ -91,7 +91,7 @@ def build_fire_events(
             lat_min=('latitude', 'min'), lat_max=('latitude', 'max'),
             lon_min=('longitude', 'min'), lon_max=('longitude', 'max'),
             n_detections=('observation_id', 'size'),
-            frp_sum_mw=('frp_mw', 'sum'), frp_mean_mw=('frp_mw', 'mean'),
+            frp_sum_mw=('frp_mw', lambda x: x.sum(min_count=1)), frp_mean_mw=('frp_mw', 'mean'),
             frp_max_mw=('frp_mw', 'max'),
         )
         counts = part.pivot_table(index='_label', columns='sensor_family',

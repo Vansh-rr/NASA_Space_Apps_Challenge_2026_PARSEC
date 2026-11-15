@@ -1,0 +1,31 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> firesync@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v8.3.8 building client environment for production...
+transforming...
+✓ 2529 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                 0.72 kB │ gzip:   0.39 kB
+dist/assets/maplibre-gl-worker-ScjyBlZc.js    519.47 kB
+dist/assets/ModelPreviewPage-D29krRlz.css       1.09 kB │ gzip:   0.50 kB
+dist/assets/charts-tcHRvWA3.css                 1.14 kB │ gzip:   0.54 kB
+dist/assets/metrics-C_ulBR8U.css                2.73 kB │ gzip:   1.00 kB
+dist/assets/AnalyticsPage-Cy0HUk3x.css          2.76 kB │ gzip:   0.96 kB
+dist/assets/ExplorePage-NXHNyQ8g.css            4.09 kB │ gzip:   1.34 kB
+dist/assets/ComparePage-D_UfZ8rz.css            5.88 kB │ gzip:   1.63 kB
+dist/assets/index-DA70vCf1.css                 79.93 kB │ gzip:  12.68 kB
+dist/assets/useServiceQuery-CFWtShFn.js         1.65 kB │ gzip:   0.88 kB
+dist/assets/comparisonService-BvPuBbzs.js       4.58 kB │ gzip:   1.99 kB
+dist/assets/ModelPreviewPage-DvXlxRCm.js        6.86 kB │ gzip:   2.36 kB
+dist/assets/ExplorePage-o68WUnWc.js            12.27 kB │ gzip:   4.50 kB
+dist/assets/LineChart-kVOoVpcN.js              12.42 kB │ gzip:   4.56 kB
+dist/assets/ComparePage-BqWEk12v.js            31.54 kB │ gzip:  10.73 kB
+dist/assets/AnalyticsPage-Cz_lAwCi.js          35.21 kB │ gzip:  11.81 kB
+dist/assets/index-Cwz682Ck.js                 276.00 kB │ gzip:  88.71 kB
+dist/assets/charts.module-CB1a0_Zu.js         355.33 kB │ gzip: 102.93 kB
+dist/assets/metrics-CygohfSD.js             1,093.79 kB │ gzip: 299.76 kB
+
+✓ built in 786ms

@@ -48,15 +48,15 @@ const FAKE_API: ApiComparisonResponse = {
 };
 
 describe('fillDailySums', () => {
-  it('puts 0 on missing days and null sum_frp_mw', () => {
+  it('preserves missing days and unreported FRP as null', () => {
     const sums = fillDailySums('2023-07', [
       { date: '2023-07-01 00:00:00', detections: 10, sum_frp_mw: 12.5 },
       { date: '2023-07-03 00:00:00', detections: 5, sum_frp_mw: null },
     ]);
     expect(sums).toHaveLength(31);
     expect(sums[0]).toBe(12.5);
-    expect(sums[1]).toBe(0);
-    expect(sums[2]).toBe(0);
+    expect(sums[1]).toBeNull();
+    expect(sums[2]).toBeNull();
   });
 });
 

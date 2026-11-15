@@ -36,8 +36,11 @@ def test_dashboard_steps_fill_their_tables(phase1_db, cfg):
     run_pipeline(start='2023-07-01', end='2023-07-31', db_path=phase1_db, cfg=cfg, plots=False)
     counts = table_counts(db_path=phase1_db).set_index('table')['rows']
     for table in ['sensor_comparison_summary', 'historical_observations',
-                  'historical_harmonized_activity', 'fire_calendar', 'seasonal_baselines']:
+                  'historical_harmonized_activity', 'fire_calendar']:
         assert counts[table] > 0, table
+    # Hotspot fixtures do not attest complete monthly observation coverage.
+    assert counts['seasonal_baselines'] == 0
+    assert counts['fire_anomalies'] == 0
 
 
 def test_unknown_step():
