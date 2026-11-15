@@ -1,5 +1,5 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { SENSOR_HEX, SENSOR_ORDER, SENSORS } from '../../data/sensors';
+import { SENSOR_DASH, SENSOR_HEX, SENSOR_ORDER, SENSORS } from '../../data/sensors';
 import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
 import type { DailyAnalytics } from '../../types/analytics';
 import type { SensorId } from '../../types/fire';
@@ -30,7 +30,17 @@ export function DetectionComparisonChart({ daily, sensors }: { daily: DailyAnaly
         <ul className={styles.legend} aria-label="Legend">
           {active.map((sensor) => (
             <li key={sensor}>
-              <span className={styles.legendLine} style={{ background: SENSOR_HEX[sensor], color: SENSOR_HEX[sensor] }} aria-hidden="true" />
+              <svg width="24" height="10" aria-hidden="true">
+                <line
+                  x1="0"
+                  y1="5"
+                  x2="24"
+                  y2="5"
+                  stroke={SENSOR_HEX[sensor]}
+                  strokeWidth={2}
+                  strokeDasharray={SENSOR_DASH[sensor] || undefined}
+                />
+              </svg>
               {SENSORS[sensor].label}
             </li>
           ))}
@@ -69,6 +79,7 @@ export function DetectionComparisonChart({ daily, sensors }: { daily: DailyAnaly
                 type="linear"
                 stroke={SENSOR_HEX[sensor]}
                 strokeWidth={2}
+                strokeDasharray={SENSOR_DASH[sensor]}
                 dot={{ r: 3, fill: '#FFFFFF', stroke: SENSOR_HEX[sensor], strokeWidth: 1.5 }}
                 activeDot={{ r: 5 }}
                 isAnimationActive={!reduced}

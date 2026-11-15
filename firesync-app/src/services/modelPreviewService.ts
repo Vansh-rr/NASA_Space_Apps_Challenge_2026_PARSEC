@@ -62,10 +62,24 @@ export interface ModelPreviewData {
   validation: ModelPreviewValidation;
 }
 
+export function previewDateRange(
+  metadata: Pick<ModelPreviewMetadata, 'start_utc' | 'last_bin_utc'>,
+): { start: string; end: string } {
+  return {
+    start: metadata.start_utc.slice(0, 10),
+    end: metadata.last_bin_utc.slice(0, 10),
+  };
+}
+
 export async function fetchModelPreview(signal?: AbortSignal): Promise<ModelPreviewData> {
-  const [metadata, field, validation] = await Promise.all([
-    getJson<ModelPreviewMetadata>('/model-preview/metadata', undefined, signal),
-    getJson<{ items: ModelPreviewFieldItem[]; total: number }>('/model-preview/field', { limit: 10000 }, signal),
+  const metadata = await getJson<ModelPreviewMetadata>('/model-preview/metadata', undefined, signal);
+  const { start, end } = previewDateRange(metadata);
+  const [field, validation] = await Promise.all([
+    getJson<{ items: ModelPreviewFieldItem[]; total: number }>(
+      '/model-preview/field',
+      { start, end, limit: 10000 },
+      signal,
+    ),
     getJson<ModelPreviewValidation>('/model-preview/validation', undefined, signal),
   ]);
   return { metadata, items: field.items, validation };

@@ -81,6 +81,10 @@ export function ModelPreviewPage() {
             Model-estimated fire probability (mean over cells, hourly)
           </h2>
         </div>
+        <p className={styles.validationText}>
+          Only {metadata.observed_rows} of {metadata.rows} cell-hours have a direct observation. Elsewhere the line
+          shows the model’s illustrative starting assumptions, not evidence of fire.
+        </p>
         <div
           className={chartStyles.plot}
           role="img"

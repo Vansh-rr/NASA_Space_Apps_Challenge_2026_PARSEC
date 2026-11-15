@@ -27,4 +27,10 @@ export const SENSOR_HEX: Record<SensorId, string> = {
   harmonized: '#EC7D28',
 };
 
+export const SENSOR_DASH: Record<SensorId, string> = {
+  modis: '',
+  viirs: '6 4',
+  harmonized: '2 4',
+};
+
 export const SENSOR_ORDER: SensorId[] = ['modis', 'viirs', 'harmonized'];

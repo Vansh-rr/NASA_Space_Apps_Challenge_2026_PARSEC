@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { cellSummary, hourlyMeanProbability, type ModelPreviewFieldItem } from './modelPreviewService';
+import {
+  cellSummary,
+  hourlyMeanProbability,
+  previewDateRange,
+  type ModelPreviewFieldItem,
+} from './modelPreviewService';
 
 const SAMPLE_ITEMS: ModelPreviewFieldItem[] = [
   {
@@ -68,5 +73,19 @@ describe('cellSummary', () => {
     expect(out[1].meanPFire).toBeCloseTo(0.3, 6);
     expect(out[1].maxPFire).toBeCloseTo(0.4, 6);
     expect(out[1].observedBins).toBe(1);
+  });
+});
+
+describe('previewDateRange', () => {
+  it('returns the YYYY-MM-DD prefix of start_utc and last_bin_utc', () => {
+    expect(
+      previewDateRange({
+        start_utc: '2024-08-03T05:00:00+00:00',
+        last_bin_utc: '2024-08-09T22:00:00+00:00',
+      }),
+    ).toEqual({
+      start: '2024-08-03',
+      end: '2024-08-09',
+    });
   });
 });
