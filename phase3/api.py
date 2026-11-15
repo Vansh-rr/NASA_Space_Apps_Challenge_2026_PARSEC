@@ -13,7 +13,7 @@ from phase1_queries import _where_clause
 from phase2.phase2_config import load_config
 
 # backend for the web app (phase 3): B1 app, CORS, read-only database, /health, /regions
-#                                    B2 /observations
+#                                    B2 /observations, B3 /activity
 # run:   uvicorn phase3.api:app --reload        then open http://localhost:8000/docs
 # env:   PARSEC_DB_PATH        other database file (default data/fires.duckdb)
 #        PARSEC_DEMO=1         use the demo database instead
@@ -144,6 +144,49 @@ def observations(response: Response, region: str = 'british_columbia', month: st
     for r in out:
         r['is_demo'] = is_demo()
         r['observed_at'] = pd.Timestamp(r['observed_at']).isoformat()
+    return out
+
+
+# B3: fire activity calendar (year x month)
+
+DAY = r'^\d{4}-\d{2}-\d{2}$'
+
+
+@app.get('/activity')
+def activity_matrix(region: str = 'british_columbia',
+                    start: str | None = Query(None, pattern=DAY, description='YYYY-MM-DD (default: all)'),
+                    end: str | None = Query(None, pattern=DAY, description='YYYY-MM-DD, included'),
+                    sensor: Literal['MODIS', 'VIIRS', 'harmonized'] = 'VIIRS', con=Depends(get_db)):
+    """Monthly detection count, summed and mean FRP per year/month cell. Months without a row
+    have no data downloaded or no detections (not automatically zero fires).
+    harmonized = matched MODIS detections with the harmonized FRP of the newest model run."""
+    bbox = region_bbox(region)
+    if sensor in ('MODIS', 'VIIRS'):
+        where, params = _where_clause(bbox, start, end, sensor)
+        sql = f'''SELECT year(acq_datetime_utc) AS year, month(acq_datetime_utc) AS month,
+                         COUNT(*) AS detections, SUM(frp_mw) AS sum_frp_mw, AVG(frp_mw) AS mean_frp_mw
+                  FROM observations {where} GROUP BY 1, 2 ORDER BY 1, 2'''
+    else:
+        run = latest_run(con)
+        if run is None:
+            return []
+        where, params = _where_clause(bbox, start, end)
+        where = where.replace('longitude', 'o.longitude').replace('latitude', 'o.latitude') \
+                     .replace('acq_datetime_utc', 'o.acq_datetime_utc')
+        sql = f'''SELECT year(o.acq_datetime_utc) AS year, month(o.acq_datetime_utc) AS month,
+                         COUNT(*) AS detections, SUM(p.predicted_value) AS sum_frp_mw,
+                         AVG(p.predicted_value) AS mean_frp_mw
+                  FROM model_predictions p
+                  JOIN (SELECT DISTINCT match_group_id, modis_observation_id, region
+                        FROM matched_observations) mt ON mt.match_group_id = p.unit_id
+                  JOIN observations o ON o.observation_id = mt.modis_observation_id
+                  {where} {'AND' if where else 'WHERE'} p.model_run_id = ? AND mt.region = ?
+                  GROUP BY 1, 2 ORDER BY 1, 2'''
+        params = params + [run, region]
+    out = rows(con, sql, params)
+    for r in out:
+        r['sensor'] = sensor
+        r['year'], r['month'], r['detections'] = int(r['year']), int(r['month']), int(r['detections'])
     return out
 
 

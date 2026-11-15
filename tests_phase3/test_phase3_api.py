@@ -80,3 +80,25 @@ def test_observations_bad_input(client):
     assert client.get('/observations', params={'region': 'mars'}).status_code == 404
     assert client.get('/observations', params={'month': 'july'}).status_code == 422
     assert client.get('/observations', params={'sensor': 'GOES'}).status_code == 422
+
+
+# B3 activity matrix
+
+def test_activity_matrix_raw(client):
+    modis = client.get('/activity', params={'sensor': 'MODIS'}).json()
+    assert len(modis) == 1                                          # test data is July 2023 only
+    cell = modis[0]
+    assert (cell['year'], cell['month'], cell['detections'], cell['sensor']) == (2023, 7, 101, 'MODIS')
+    assert cell['mean_frp_mw'] == pytest.approx(cell['sum_frp_mw'] / 101)
+    viirs = client.get('/activity', params={'sensor': 'VIIRS', 'start': '2023-07-01', 'end': '2023-07-03'}).json()
+    assert viirs[0]['detections'] == 3 * 61                        # 3 days x (60 matched + 1 lonely)
+    assert client.get('/activity', params={'start': '2024-01-01'}).json() == []
+
+
+def test_activity_matrix_harmonized(harmonized_client):
+    cells = harmonized_client.get('/activity', params={'sensor': 'harmonized'}).json()
+    assert len(cells) == 1 and cells[0]['detections'] == 100 and cells[0]['sensor'] == 'harmonized'
+
+
+def test_activity_bad_dates(client):
+    assert client.get('/activity', params={'start': '2023-7-1'}).status_code == 422
