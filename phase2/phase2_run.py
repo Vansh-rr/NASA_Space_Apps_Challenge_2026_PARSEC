@@ -10,12 +10,12 @@ from phase2.phase2_database import db_path_for, store, table_counts
 
 # one command for all of phase 2 (task 2.18), in the right order:
 #   flags -> overlap -> grid -> matching -> events -> comparison -> features -> splits
-#   -> datasets -> baseline -> validation
+#   -> datasets -> baseline -> validation -> history -> analytics
 # every step reads what the step before saved, so you can also start in the middle
 # (--from events) or run one step (--only splits). reruns add no duplicate rows.
 
 STEPS = ['flags', 'overlap', 'grid', 'matching', 'events', 'comparison',
-         'features', 'splits', 'datasets', 'baseline', 'validation']
+         'features', 'splits', 'datasets', 'baseline', 'validation', 'history', 'analytics']
 
 
 def step_flags(ctx):
@@ -94,7 +94,11 @@ def step_comparison(ctx):
     pairs.to_parquet(folder / 'raw_pairs.parquet', index=False)
     aggregate_groups(pairs).to_parquet(folder / 'raw_match_groups.parquet', index=False)
     compute_comparison_stats(pairs).to_csv(folder / 'raw_sensor_statistics.csv', index=False)
-    return {'raw_pairs': len(pairs), 'reference': 'sensor agreement, not independent truth'}
+    # full 2.11 report: summary table, plots, matched vs unmatched
+    from phase2.phase2_sensor_comparison import make_comparison
+    summary = make_comparison(ctx['region'], ctx['db'], cfg=cfg, plots=ctx['plots'])
+    return {'raw_pairs': len(pairs), 'summary_rows': len(summary),
+            'reference': 'sensor agreement, not independent truth'}
 
 
 def step_features(ctx):
@@ -127,6 +131,19 @@ def step_validation(ctx):
     return {'test_mae': round(test['mae'], 2) if 'mae' in test else None,
             'test_r': round(test['pearson_r'], 3) if 'pearson_r' in test else None,
             'test_split_available': 'mae' in test}
+
+
+def step_history(ctx):
+    from phase2.phase2_history import make_history
+    h = make_history(ctx['region'], ctx['start'], ctx['end'], run_id=ctx.get('run_id'),
+                     db_path=ctx['db'], cfg=ctx['cfg'])
+    return {w: len(rows) for w, rows in h.items()}
+
+
+def step_analytics(ctx):
+    from phase2.phase2_analytics import make_analytics
+    out = make_analytics(ctx['region'], ctx['db'], cfg=ctx['cfg'])
+    return {t: len(rows) for t, rows in out.items()}
 
 
 def run_pipeline(steps=None, region=None, start=None, end=None, method=None, model=None,

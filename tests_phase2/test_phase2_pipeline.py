@@ -32,6 +32,14 @@ def test_steps_run_in_order_and_can_start_in_the_middle(phase1_db, cfg):
     assert list(log['step']) == ['matching', 'events', 'splits']
 
 
+def test_dashboard_steps_fill_their_tables(phase1_db, cfg):
+    run_pipeline(start='2023-07-01', end='2023-07-31', db_path=phase1_db, cfg=cfg, plots=False)
+    counts = table_counts(db_path=phase1_db).set_index('table')['rows']
+    for table in ['sensor_comparison_summary', 'historical_observations',
+                  'historical_harmonized_activity', 'fire_calendar', 'seasonal_baselines']:
+        assert counts[table] > 0, table
+
+
 def test_unknown_step():
     with pytest.raises(ValueError, match='unknown steps'):
         run_pipeline(['nope'])

@@ -164,6 +164,59 @@ TABLES = {
         'distance_km_mean': 'DOUBLE', 'time_diff_minutes': 'DOUBLE',
         'dataset_version': 'VARCHAR NOT NULL',
     }, ('match_group_id', 'dataset_version')),
+
+    # 2.16 history: raw observed activity per period, and harmonized estimates from a model run
+    'historical_observations': ({
+        'period_start': 'DATE NOT NULL', 'time_window': 'VARCHAR NOT NULL',
+        'region': 'VARCHAR NOT NULL', 'sensor_family': 'VARCHAR NOT NULL',
+        'satellite': 'VARCHAR NOT NULL', 'days_in_range': 'INTEGER NOT NULL',
+        'coverage_state': 'VARCHAR NOT NULL', 'n_detections': 'INTEGER',
+        'n_flagged': 'INTEGER', 'n_days_with_detections': 'INTEGER',
+        'frp_sum_mw': 'DOUBLE', 'frp_mean_mw': 'DOUBLE', 'frp_p90_mw': 'DOUBLE', 'frp_max_mw': 'DOUBLE',
+        'quality_flags': 'VARCHAR', 'activity_type': 'VARCHAR NOT NULL',
+        'dataset_version': 'VARCHAR NOT NULL',
+    }, ('period_start', 'time_window', 'region', 'sensor_family', 'satellite', 'dataset_version')),
+    'historical_harmonized_activity': ({
+        'period_start': 'DATE NOT NULL', 'time_window': 'VARCHAR NOT NULL',
+        'region': 'VARCHAR NOT NULL', 'model_run_id': 'VARCHAR NOT NULL',
+        'model_name': 'VARCHAR', 'n_units': 'INTEGER NOT NULL',
+        'source_frp_sum_mw': 'DOUBLE', 'harmonized_frp_sum_mw': 'DOUBLE',
+        'harmonized_lower_sum_mw': 'DOUBLE', 'harmonized_upper_sum_mw': 'DOUBLE',
+        'activity_type': 'VARCHAR NOT NULL', 'dataset_version': 'VARCHAR NOT NULL',
+    }, ('period_start', 'time_window', 'region', 'model_run_id', 'dataset_version')),
+
+    # 2.17 fire analytics for the dashboard (view = raw_observed or harmonized_estimate)
+    'fire_calendar': ({
+        'year': 'INTEGER NOT NULL', 'month': 'INTEGER NOT NULL', 'region': 'VARCHAR NOT NULL',
+        'sensor_family': 'VARCHAR NOT NULL', 'satellite': 'VARCHAR NOT NULL',
+        'view': 'VARCHAR NOT NULL', 'model_run_id': 'VARCHAR NOT NULL',
+        'days_in_range': 'INTEGER', 'coverage_state': 'VARCHAR', 'n_detections': 'INTEGER',
+        'frp_sum_mw': 'DOUBLE', 'n_fire_events_started': 'INTEGER',
+        'dataset_version': 'VARCHAR NOT NULL',
+    }, ('year', 'month', 'region', 'sensor_family', 'satellite', 'view', 'model_run_id', 'dataset_version')),
+    'seasonal_baselines': ({
+        'region': 'VARCHAR NOT NULL', 'sensor_family': 'VARCHAR NOT NULL',
+        'satellite': 'VARCHAR NOT NULL', 'month': 'INTEGER NOT NULL', 'metric': 'VARCHAR NOT NULL',
+        'n_years': 'INTEGER NOT NULL', 'first_year': 'INTEGER', 'last_year': 'INTEGER',
+        'mean': 'DOUBLE', 'median': 'DOUBLE', 'std': 'DOUBLE', 'p10': 'DOUBLE', 'p90': 'DOUBLE',
+        'min': 'DOUBLE', 'max': 'DOUBLE', 'dataset_version': 'VARCHAR NOT NULL',
+    }, ('region', 'sensor_family', 'satellite', 'month', 'metric', 'dataset_version')),
+    'fire_anomalies': ({
+        'year': 'INTEGER NOT NULL', 'month': 'INTEGER NOT NULL', 'region': 'VARCHAR NOT NULL',
+        'sensor_family': 'VARCHAR NOT NULL', 'satellite': 'VARCHAR NOT NULL',
+        'metric': 'VARCHAR NOT NULL', 'value': 'DOUBLE', 'n_baseline_years': 'INTEGER NOT NULL',
+        'baseline_median': 'DOUBLE', 'baseline_mean': 'DOUBLE', 'baseline_std': 'DOUBLE',
+        'z_score': 'DOUBLE', 'percentile': 'DOUBLE', 'anomaly_class': 'VARCHAR NOT NULL',
+        'dataset_version': 'VARCHAR NOT NULL',
+    }, ('year', 'month', 'region', 'sensor_family', 'satellite', 'metric', 'dataset_version')),
+
+    # 2.11 raw sensor comparison (long format: one number per row)
+    'sensor_comparison_summary': ({
+        'region': 'VARCHAR NOT NULL', 'section': 'VARCHAR NOT NULL',
+        'group_by': 'VARCHAR NOT NULL', 'group_value': 'VARCHAR NOT NULL',
+        'metric': 'VARCHAR NOT NULL', 'value': 'DOUBLE',
+        'dataset_version': 'VARCHAR NOT NULL',
+    }, ('region', 'section', 'group_by', 'group_value', 'metric', 'dataset_version')),
 }
 
 
