@@ -83,3 +83,26 @@ def test_upload_context_excludes_secrets_but_keeps_the_database(tmp_path):
         code=subprocess.run(['git','check-ignore','--no-index','-q',name],cwd=tmp_path).returncode
         assert code == (0 if name in excluded else 1),name
     assert (root/'.gcloudignore').read_text()==(root/'.dockerignore').read_text()
+
+
+def test_container_startup_connection_reset_is_retried(monkeypatch):
+    import io,json
+    import tools.smoke_api as api
+    health_calls=[]
+    class Response(io.BytesIO):
+        status=200
+        headers={}
+    def open_response(request,timeout):
+        url=request if isinstance(request,str) else request.full_url
+        if url.endswith('/health'):
+            health_calls.append(url)
+            if len(health_calls)==1:raise ConnectionResetError('Container is still starting')
+            data={'status':'ok','database_found':True,'observations':1,'demo':False}
+        elif '/comparison?' in url:data={'sensors':[{'sensor':'harmonized','detections':1}]}
+        elif '/observations?' in url:data=[{'id':'example'}]
+        else:data={}
+        return Response(json.dumps(data).encode())
+    monkeypatch.setattr(api,'urlopen',open_response)
+    monkeypatch.setattr(api.time,'sleep',lambda _:None)
+    assert api.smoke('https://api.example',wait_seconds=2)['passed'] is True
+    assert len(health_calls)==2

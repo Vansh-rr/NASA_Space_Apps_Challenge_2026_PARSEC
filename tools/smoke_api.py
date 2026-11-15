@@ -22,7 +22,7 @@ def smoke(base, *, origin=None, expect_demo=False, wait_seconds=0):
         try:
             with urlopen(base+'/health',timeout=15) as res: health=json.load(res)
             break
-        except (URLError,HTTPError):
+        except (URLError,HTTPError,ConnectionError,TimeoutError):
             if time.monotonic()>=deadline:raise
             time.sleep(1)
     if health.get('database_found') is not True or health.get('observations',0)<=0 or health.get('demo') is not expect_demo:

@@ -3,7 +3,7 @@
 Prepared from `ui-backend-connect` commit `eaf517f8758bfd3635e730dc7466fbfcc4bbd3ea` on 16 November 2026 (client date).
 
 - Complete offline suite: 177 Python tests, 46 frontend tests, 11 independent C regression checks, and the TypeScript/Vite production build passed.
-- Deployment-only regression checks: 9 passed, including project-scoped commands, no-execution dry runs, restricted/normalized CORS, rejection of absent/non-self-contained snapshots, and upload allowlists.
+- Deployment-only regression checks: 10 passed, including project-scoped commands, no-execution dry runs, restricted/normalized CORS, rejection of absent/non-self-contained snapshots, upload allowlists, and connection-reset retries during container startup.
 - Isolated API runtime: installed only `requirements-api.txt` with tested constraints in a fresh virtualenv. Copied only the Docker serving source set, config, published preview and a synthetic test database. All eight API views and allowed/blocked CORS checks passed. Shapely, PyProj, GeoPandas and NetCDF were absent from this environment.
 - Cloudflare-style production build with an HTTPS API URL passed. An otherwise identical build with the API URL omitted failed as intended.
 - The image build and Docker smoke checks are automated in `.github/workflows/cloud-run-container.yml`; Docker is not available in the local preparation environment. Consult that workflow for the actual image-build result.
