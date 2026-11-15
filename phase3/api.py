@@ -61,16 +61,37 @@ def rows(con, sql: str, params=None) -> list[dict]:
     return df.astype(object).where(df.notna(), None).to_dict(orient='records')
 
 
-@app.get('/health')
-def health():
-    """Is the API up, and can it see the database?"""
-    path = db_path()
-    out = {'status': 'ok', 'database': path.name, 'database_found': path.exists(), 'demo': is_demo()}
-    if path.exists():
-        with duckdb.connect(str(path), read_only=True) as con:
-            out['observations'] = con.execute('SELECT COUNT(*) FROM observations').fetchall()[0][0]
-    return out
 
+@app.get('/health')
+def health(response: Response):
+    path = db_path()
+
+    result = {
+        "status": "unhealthy",
+        "database": path.name,
+        "database_found": path.exists(),
+        "database_connected": False,
+        "demo": is_demo()
+    }
+
+    if not path.exists():
+        response.status_code = 503
+        return result
+
+    try:
+        with duckdb.connect(str(path), read_only=True) as con:
+            count = con.execute(
+                "SELECT COUNT(*) FROM observations"
+            ).fetchone()[0]
+
+            result["status"] = "ok"
+            result["database_connected"] = True
+            result["observations"] = count
+
+    except Exception:
+        response.status_code = 503
+
+    return result
 
 @app.get('/regions')
 def regions():
